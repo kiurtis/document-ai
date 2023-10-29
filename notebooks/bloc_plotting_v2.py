@@ -21,7 +21,7 @@ import PIL
 from PIL import ImageDraw
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
-from Levenshtein import distance
+from Levenshtein import distance as l_distance
 import math
 
 def convert_pdf_to_jpg(pdf_path, output_folder=None, dpi=300):
@@ -34,10 +34,6 @@ def convert_pdf_to_jpg(pdf_path, output_folder=None, dpi=300):
         if output_folder:
             image_name = f"{output_folder}/{image_name}"
         image.save(image_name, "JPEG")
-
-# Example usage
-#pdf_path = "/Users/pipobimbo/Desktop/Caliente_work/OCR_test/doctr/pdf/pvl_GM266PC.pdf"
-#convert_pdf_to_jpg(pdf_path)
 
 
 def get_block_coordinates(output):
@@ -107,82 +103,127 @@ def plot_centers2(bound, img_dims):
     plt.show()
 
 def convert_to_cartesian(bound, img_dims):
+    '''Convert data from matrix-like coordinates system (x,y), with y from top to bottom to a 
+    cartesian coordinates system (x,y) with y from bottom to top.
+    Return coordinates with the format x_min, x_max, y_min, y_max'''
     _, img_height = img_dims
     cartesian_bound = []
 
     for box, word in bound:
         # Convert y-values by subtracting them from the image height
-        new_box = [box[0], box[1], img_height - box[3], img_height - box[2]]
+        x_min, x_max, y_min, y_max = box[0], box[1], img_height - box[3], img_height - box[2]
+        new_box = [x_min, x_max, y_min, y_max]
         cartesian_bound.append((new_box, word))
 
     return cartesian_bound
 
 
+def _compare_words_similarity(word1, word2, distance_margin):
+    return l_distance(word1, word2) <= distance_margin
 
-def find_word_to_right(bounding_boxes, search_word):
+def _has_overlap(y1_min, y1_max, y2_min, y2_max, minimum_overlap=5):
+    return (y2_min  <= y1_min <= y2_max - minimum_overlap) or \
+           (y2_min + minimum_overlap <= y1_max <= y2_max)
+
+def _get_box_corresponding_to_word(key_word, bounding_boxes, distance_margin, verbose):
     # Find the bounding box for the search word
-    search_box = None
+    key_box = None
     for box, word in bounding_boxes:
-        if word == search_word:
-            search_box = box
+        if _compare_words_similarity(word.lower(), key_word.lower(), distance_margin):
+            print(word, key_word)
+            key_box = box
             break
+    if verbose:
+        print(f'Key box defined to {key_box}')
+    
+    return key_box, key_word
+
+def find_next_right_word(bounding_boxes, key_word, distance_margin=1,verbose=False):
+    
+    key_box, key_word = _get_box_corresponding_to_word(key_word, bounding_boxes, distance_margin,verbose)
     
     # If the word isn't found, return None
-    if search_box is None:
+    if key_box is None:
+        print("No box corresponding to the key word found")
         return None
-
+    
     # Variables to store the closest word and its distance
     closest_word = None
+    closest_box = None
     closest_distance = float('inf')
-
+    key_x_min, key_x_max, key_y_min, key_y_max = key_box
     for box, word in bounding_boxes:
-        # Check if the word's y-coordinates overlap with the search word's
-        if not (box[3] < search_box[2] or box[2] > search_box[3]):
-            # Check if the word is to the right of the search word
-            if box[0] > search_box[1]:
-                distance = box[0] - search_box[1]  # Calculate distance to the right
+        # Check if the word's y-coordinates overlap with the key word's
+        (b_x_min, b_x_max, b_y_min, b_y_max) = box
+        #print(box)
+        #print(key_box)
+        #print(word)
+        if _has_overlap(key_y_min, key_y_max, b_y_min, b_y_max):
+            # Check if the word is to the right of the key word
+            if b_x_min > key_x_min: #There maybe x overlap as well
+                distance = b_x_max - key_x_max  # Calculate distance right coordinates
+                print(f'distance to {word}',distance)
                 if distance < closest_distance:
                     closest_distance = distance
                     closest_word = word
+                    closest_box = box
 
-    return closest_word
+    return {'detected': (key_box, key_word),
+            'next':(closest_box, closest_word)}
 
+def merge_word_with_following(converted_boxes, key_word):
+    data = find_next_right_word(converted_boxes, key_word, distance_margin=1, verbose=True)
+    new_word = data['detected'][1] + ' ' + data['next'][1]
+    new_box = (min(data['detected'][0][0],data['next'][0][0]),
+               max(data['detected'][0][1],data['next'][0][1]),
+               min(data['detected'][0][2],data['next'][0][2]),
+               max(data['detected'][0][3],data['next'][0][3]))
+    converted_boxes.pop(converted_boxes.index(data['detected']))
+    converted_boxes.pop(converted_boxes.index(data['next']))
+    converted_boxes.append((new_box,new_word))
+    return converted_boxes
+
+
+# -
+
+# ## I. Running the detection & recognition model
 
 # +
-img_path = "/Users/pipobimbo/Desktop/Caliente_work/OCR_test/doctr/test2.png"
+img_path = "../arval/barth_jpg/arval_fleet_service_restitution/DY-984-XY_PV de reprise_p2.jpeg"
 img = DocumentFile.from_images(img_path)
 
-model = ocr_predictor(det_arch = 'db_resnet50',reco_arch = 'crnn_vgg16_bn',pretrained = True)
+model = ocr_predictor(det_arch = 'db_resnet50',reco_arch = 'crnn_mobilenet_v3_large',pretrained = True)
 
 result = model(img)
 output = result.export()
 
+
+# + jupyter={"outputs_hidden": true}
 # Get and print the blocs :
 graphical_coordinates = get_block_coordinates(output)
-
-
 image = PIL.Image.open(img_path)
-result_image = draw_bounds(image, graphical_coordinates)
+result_image = draw_bounds(image, graphical_coordinates[4:5])
 plt.figure(figsize=(15,15))
 plt.imshow(result_image)
-
-
-# +
-#getting all the world and converting them to cartesian coords
-graphical_coordinates,text_coordinates_and_word = get_words_coordinates(output)
-image_dims = (output['pages'][0]["dimensions"][1], output['pages'][0]["dimensions"][0])  # Replace with your image dimensions
-print(image_dims)
-
-converted_boxes = convert_to_cartesian(text_coordinates_and_word, image_dims)
-
-print(converted_boxes)
-#print(text_coordinates_and_word)
 # -
 
-search_word = "Couleur"
-print(find_word_to_right(converted_boxes, search_word))
+# ## II. Preprocessing 
 
+# Getting all the words and converting their bounding box to cartesian coords (y from the bottom to the top).
+
+graphical_coordinates, text_coordinates_and_word = get_words_coordinates(output)
+image_dims = (output['pages'][0]["dimensions"][1], output['pages'][0]["dimensions"][0])  # Replace with your image dimensions
+print(image_dims)
+converted_boxes = convert_to_cartesian(text_coordinates_and_word, image_dims)
 print(converted_boxes)
+
+# Preprocessing of the key words composed of multiple words (for instance "Restitué" -> "Restitué le").
+
+merge_word_with_following(converted_boxes,'Restitué')
+
+# ## III. Getting the value for a given key
+
+key_word = "Kilométrage:"
+print(find_next_right_word(converted_boxes, key_word, distance_margin=1, verbose=True))
+
 plot_centers2(converted_boxes, image_dims)
-
-
