@@ -191,7 +191,7 @@ def merge_word_with_following(converted_boxes, key_word):
 
 # +
 #img_path = "../arval/barth_jpg/arval_fleet_service_restitution/DY-984-XY_PV de reprise_p2.jpeg"
-img_path = "../test_data/DM-984-VT_Proces verbal de restitution_page-0001_bloc_2.png"
+img_path = "/Users/pipobimbo/Desktop/Caliente_work/OCR_test/pop_files/myzip_jpg/arval_fleet_service_restitution/transposed_2/DM-984-VT_Proces_verbal_de_restitution_page-0001.jpg"
 img = DocumentFile.from_images(img_path)
 
 model = ocr_predictor(det_arch = 'db_resnet50',reco_arch = 'crnn_mobilenet_v3_large',pretrained = True)
@@ -218,17 +218,16 @@ print(image_dims)
 converted_boxes = convert_to_cartesian(text_coordinates_and_word, image_dims)
 print(converted_boxes)
 
-# + jupyter={"outputs_hidden": true}
 converted_boxes
-# -
 
 # Preprocessing of the key words composed of multiple words (for instance "Restitué" -> "Restitué le").
 
-# + jupyter={"outputs_hidden": true}
 merge_word_with_following(converted_boxes,'Restitué')
 
 # +
-img_path = "../test_data/DM-984-VT_Proces verbal de restitution_page-0001_bloc_2.png"
+#img_path = "../test_data/DM-984-VT_Proces verbal de restitution_page-0001_bloc_2.png"
+img_path = "/Users/pipobimbo/Desktop/Caliente_work/OCR_test/pop_files/myzip_jpg/arval_fleet_service_restitution/transposed_2/DM-984-VT_Proces_verbal_de_restitution_page-0001.jpg"
+
 img = DocumentFile.from_images(img_path)
 
 model = ocr_predictor(det_arch = 'db_resnet50',reco_arch = 'crnn_mobilenet_v3_large',pretrained = True)
@@ -278,25 +277,37 @@ import os
 os.chdir('..')
 
 # Example usage
-ground_truths_list = os.listdir('fleet_service_jsons')
+ground_truths_list = os.listdir('/Users/pipobimbo/Desktop/Caliente_work/OCR_test/pop_files/fleet_service_json')
 
-Path('..data/performances_data/fleet_service_jsons')/f'{ground_truths_list[0]}'
+Path('/Users/pipobimbo/Desktop/Caliente_work/OCR_test/pop_files/fleet_service_json')/f'{ground_truths_list[0]}'
 
-FOLDER_GROUND_TRUTHS = Path('data/performances_data/fleet_service_jsons')
+FOLDER_GROUND_TRUTHS = Path('/Users/pipobimbo/Desktop/Caliente_work/OCR_test/pop_files/fleet_service_json')
 with open(FOLDER_GROUND_TRUTHS/f'{ground_truths_list[0]}') as f:
     template = list(json.load(f).keys())[1:]
 
-FOLDER_BLOCKS = Path('data/performances_data/fleet_services_blocks')
+#FOLDER_BLOCKS = Path('data/performances_data/fleet_services_blocks')
+FOLDER_BLOCKS = Path('/Users/pipobimbo/Desktop/Caliente_work/OCR_test/pop_files/myzip_jpg/arval_fleet_service_restitution/transposed_2')
 
+# +
 name_prefix = f'{ground_truths_list[0][:-5]}'
-path_to_name_jpeg = FOLDER_BLOCKS/name_prefix/os.listdir(FOLDER_BLOCKS/name_prefix)[0]
+name_prefix = name_prefix + ".jpg"
+
+#path_to_name_jpeg = FOLDER_BLOCKS/name_prefix/os.listdir(FOLDER_BLOCKS/name_prefix)[0]
+path_to_name_jpeg = FOLDER_BLOCKS/name_prefix/name_prefix
+# -
 
 path_to_name_jpeg
+print(template)
 
+# +
 all_results = []
+print(ground_truths_list)
+
 for i in range(10):
     name_prefix = f'{ground_truths_list[i][:-5]}'
-    path_to_name_jpeg = FOLDER_BLOCKS/name_prefix/os.listdir(FOLDER_BLOCKS/name_prefix)[0]
+    name_prefix = name_prefix + ".jpg"
+    path_to_name_jpeg = FOLDER_BLOCKS/name_prefix
+    print(path_to_name_jpeg)
     
     converted_boxes = get_processed_boxes_and_words(img_path=path_to_name_jpeg)
     result_json = {}
@@ -306,20 +317,55 @@ for i in range(10):
         if result_json[key_word] is not None:
             result_json[key_word] = result_json[key_word]['next']
     all_results.append(result_json)
-    
+# -
+
 
 all_results
 
-predicted_dict_list = [
-    # ... list of predicted values ...
-]
+# +
+predicted_dict_list = all_results
+
+
+folder_path_json = '/Users/pipobimbo/Desktop/Caliente_work/OCR_test/pop_files/fleet_service_json'
+actual_json_list = []
+if os.path.exists(folder_path_json):
+    # Get a list of all JSON files in the folder
+    json_files = [f for f in os.listdir(folder_path_json) if f.endswith('.json')]
+    
+    # Loop through each JSON file and read its contents
+    for json_file in json_files:
+        json_file_path = os.path.join(folder_path_json, json_file)
+        
+        # Check if the file exists
+        if os.path.isfile(json_file_path):
+            # Open and read the JSON file
+            with open(json_file_path, 'r', encoding='utf-8') as file:
+                json_data = json.load(file)                
+                # Now you can work with the JSON data as a Python dictionary
+                # For example, you can print the contents of each JSON file
+                #print(f"Contents of {json_file}:")
+                del json_data["File Name"]
+
+                actual_json_list.append(json_data)
+                
+        else:
+            print(f"File not found: {json_file_path}")
+else:
+    print(f"Folder not found: {folder_path_json}")
+
+print(actual_json_list)
 
 # +
-from performance_estimation import compute_content_fuzzy_accuracy
+from performance_estimation import compute_content_fuzzy_accuracy,compute_metrics_for_multiple_jsons
 
 
 
 
 metrics = compute_metrics_for_multiple_jsons(predicted_dict_list, actual_json_list)
 print(metrics)
+
+# -
+
+
+
 
