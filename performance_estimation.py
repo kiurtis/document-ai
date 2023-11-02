@@ -5,23 +5,43 @@ def compute_filling_accuracy(predicted, actual):
     total_keys = len(actual)
     correct_keys = sum([
         (predicted[key] == "<EMPTY>" and actual[key] is None) or
-        (predicted[key] != "<NOTFOUND>" and predicted[key] == actual[key])
+        (predicted[key] == None and actual[key] is None) or
+        (predicted[key] == "<NOT_FOUND>" and actual[key] is None) or
+        ((predicted[key] != "<NOT_FOUND>" and predicted[key] != "<EMPTY>") and actual[key] != None )
         for key in actual])
     return correct_keys / total_keys
 
 def compute_content_accuracy(predicted, actual):
     total_keys = len(actual)
-    correct_values = sum([predicted[key]['next'][1] == actual[key]['next'][1] for key in actual if 'next' in predicted[key] and 'next' in actual[key]])
+    
+    #correct_values = sum([predicted[key]['next'][1] == actual[key]['next'][1] for key in actual if 'next' in predicted[key] and 'next' in actual[key]])
+    correct_values = sum([
+        (predicted[key] == actual[key]) or
+        (predicted[key] == "<NOT_FOUND>" and actual[key] == None) or
+        (predicted[key] == "<EMPTY>" and actual[key] == None ) or
+        (predicted[key] == None and actual[key] == None ) 
+        for key in actual])
+    
     return correct_values / total_keys
 
 def compute_content_fuzzy_accuracy(predicted, actual):
-    lev_distances = [distance(str(predicted[key]['next'][1]), str(actual[key]['next'][1]))
-                     for key in actual if 'next' in predicted[key] and 'next' in actual[key]]
+    for key in actual: 
+        if (predicted[key] == "<EMPTY>" and actual[key] is None) or (predicted[key] == None and actual[key] is None) or (predicted[key] == "<NOT_FOUND>" and actual[key] is None):
+            return 1.0
+    
+    lev_distances = [distance(str(predicted[key]), str(actual[key]))
+                     for key in actual]
+
     avg_lev_distance = np.mean(lev_distances) if lev_distances else 0
-    max_possible_distance = max([max(len(str(predicted[key]['next'][1])), len(str(actual[key]['next'][1])))
-                                 for key in actual if 'next' in predicted[key] and 'next' in actual[key]],
-                                default=1)
+
+    local_maxs = []
+    for key in actual:
+        local_maxs.append(max(len(str(predicted[key])), len(str(actual[key]))))
+        
+    max_possible_distance = max(local_maxs,default=1)
+    
     return 1 - (avg_lev_distance / max_possible_distance)
+
 
 def compute_metrics_for_multiple_jsons(predicted_list, actual_list):
     all_metrics = {
@@ -50,6 +70,10 @@ def compute_metrics_for_multiple_jsons(predicted_list, actual_list):
                 for key, value in block_values.items():
                     key_predicted = {key: predicted[block_name][key]} if key in predicted[block_name] else {key: None}
                     key_actual = {key: value}
+                    print('key_predicted =',key_predicted,'key_actual',key_actual)
+                    print('fill acc.     =',compute_filling_accuracy(key_predicted, key_actual))
+                    print('content acc   =',compute_content_accuracy(key_predicted, key_actual))
+                    print('fuzzy acc     =',compute_content_fuzzy_accuracy(key_predicted, key_actual))
 
                     all_metrics['general']['Filling Accuracy'].append(compute_filling_accuracy(key_predicted, key_actual))
                     all_metrics['general']['Content Accuracy'].append(compute_content_accuracy(key_predicted, key_actual))
@@ -100,4 +124,3 @@ def compute_metrics_for_multiple_jsons(predicted_list, actual_list):
             all_metrics['by_key'][key][metric] = np.mean(all_metrics['by_key'][key][metric])
 
     return all_metrics
-

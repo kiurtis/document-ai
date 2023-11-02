@@ -347,7 +347,7 @@ def plot_boxes_with_text(data):
 # +
 #img_path = "../arval/barth_jpg/arval_fleet_service_restitution/DY-984-XY_PV de reprise_p2.jpeg"
 
-img_path = "data/test_data/DM-984-VT_Proces verbal de restitution_page-0001_bloc_2.png"
+img_path = "data/performances_data/fleet_services_images/DM-984-VT_Proces_verbal_de_restitution_page-0001/blocks/DM-984-VT_Proces_verbal_de_restitution_page-0001_block 2.png"
 
 img = DocumentFile.from_images(img_path)
 
@@ -379,7 +379,7 @@ print(converted_boxes)
 # Preprocessing of the key words composed of multiple words (for instance "Restitué" -> "Restitué le").
 
 # +
-img_path = "data/test_data/DM-984-VT_Proces verbal de restitution_page-0001_bloc_2.png"
+img_path = "data/performances_data/fleet_services_images/DM-984-VT_Proces_verbal_de_restitution_page-0001/blocks/DM-984-VT_Proces_verbal_de_restitution_page-0001_block 2.png"
 
 img = DocumentFile.from_images(img_path)
 
@@ -440,6 +440,8 @@ ground_truths_list = [x + '.json' for x in image_list]
 model = ocr_predictor(det_arch = 'db_resnet50',reco_arch = 'crnn_mobilenet_v3_large',pretrained = True)
 
 result_template = get_result_template()
+print(result_template.keys())
+result_template['block_2']
 
 
 # +
@@ -509,3 +511,10 @@ print(metrics)
 
 # +
 #TODO: Identify a way to distinguish the "le" from "le conducteur" and for the date.
+# -
+
+
+
+
+
+
