@@ -1,0 +1,20 @@
+{  "File Name": "EQ-955-XS_EQ-955-ES_Pv_de_restitution_p1",
+"block_2":{
+  "Immatriculé": "EQ955ES",
+  "Kilométrage": "155312 Km",
+  "Restitué le": "02/10/2023",
+  "N° de série": null,
+  "Modèle": "CRAFTER",
+  "Garage": "Soutte",
+  "Lieu d'enlèvement": "Aigremont",
+  "Réceptionnaire": "TEA",
+  "Couleur": "Blanc"
+},
+  "block_5":{
+  "Nom et prénom": "TEXT",
+  "Tél": null,
+  "E-mail": "TEXT",
+  "Société": "TEXT",
+  "le": null
+  }
+}
