@@ -346,7 +346,9 @@ def plot_boxes_with_text(data):
 
 # +
 #img_path = "../arval/barth_jpg/arval_fleet_service_restitution/DY-984-XY_PV de reprise_p2.jpeg"
+
 img_path = "data/test_data/DM-984-VT_Proces verbal de restitution_page-0001_bloc_2.png"
+
 img = DocumentFile.from_images(img_path)
 
 model = ocr_predictor(det_arch = 'db_resnet50',reco_arch = 'crnn_mobilenet_v3_large',pretrained = True)
@@ -373,10 +375,12 @@ print(image_dims)
 converted_boxes = convert_to_cartesian(text_coordinates_and_word, image_dims)
 print(converted_boxes)
 
+
 # Preprocessing of the key words composed of multiple words (for instance "Restitué" -> "Restitué le").
 
 # +
 img_path = "data/test_data/DM-984-VT_Proces verbal de restitution_page-0001_bloc_2.png"
+
 img = DocumentFile.from_images(img_path)
 
 model = ocr_predictor(det_arch = 'db_resnet50',reco_arch = 'crnn_mobilenet_v3_large',pretrained = True)
@@ -422,6 +426,7 @@ def get_result_template():
         json_template[bn] = sample_json[bn].keys()
     return json_template
 
+
 def has_found_box(value):
     return type(value) == tuple
 
@@ -436,10 +441,14 @@ model = ocr_predictor(det_arch = 'db_resnet50',reco_arch = 'crnn_mobilenet_v3_la
 
 result_template = get_result_template()
 
+
+# +
 all_results = []
+
 for element in image_list:
     print(f'==== Running for file: {element} =====')
     filename_prefix = f'{element[:-5]}'
+
     result_json = {}
     result_json['File Name'] = element
     for bn in list(result_template.keys()):
@@ -486,6 +495,7 @@ def clean_predicted_data(data):
 predicted_dict_list = [clean_predicted_data(results) for results in all_results]
 # -
 
+
 actual_json_list = [read_json(FOLDER_GROUND_TRUTHS/filename) for filename in clean_listdir(FOLDER_GROUND_TRUTHS)]
 
 # +
@@ -494,6 +504,7 @@ from performance_estimation import compute_metrics_for_multiple_jsons
 
 metrics = compute_metrics_for_multiple_jsons(predicted_dict_list, actual_json_list)
 print(metrics)
+
 
 
 # +
