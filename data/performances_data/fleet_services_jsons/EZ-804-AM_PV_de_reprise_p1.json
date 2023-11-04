@@ -7,12 +7,12 @@
   "Modèle": "CITROËN C3",
   "Garage":null,
   "Lieu d'enlèvement": "Caen",
-  "Recéptionnaire": null,
+  "Réceptionnaire": null,
   "Couleur": "Gris"
 
 },
 "block_5": {
-  "Date": "28/03/2023",
+  "le": "28/03/2023",
   "Nom et prénom": "HEZIARD Julie",
   "Tél": "0283133133",
   "E-mail": "julie.heziard@apave.com"
