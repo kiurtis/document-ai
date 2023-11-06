@@ -119,9 +119,10 @@ def _has_overlap(y1_min, y1_max, y2_min, y2_max, minimum_overlap=5):
 def _get_box_corresponding_to_word(key_word, bounding_boxes, distance_margin, verbose):
     # Find the bounding box for the search word
     key_box = None
+    #print(bounding_boxes)
     for box, word in bounding_boxes:
         if _compare_words_similarity(word.lower(), key_word.lower(), distance_margin):
-            print(word, key_word)
+            #print(word, key_word)
             key_box = box
             break
     if verbose:
@@ -137,12 +138,20 @@ def merge_word_with_following(converted_boxes, key_word):
     """
     data = find_next_right_word(converted_boxes, key_word, distance_margin=1, verbose=True)
     new_word = data['detected'][1] + ' ' + data['next'][1]
-    new_box = (min(data['detected'][0][0],data['next'][0][0]),
+    new_box = [min(data['detected'][0][0],data['next'][0][0]),
                max(data['detected'][0][1],data['next'][0][1]),
                min(data['detected'][0][2],data['next'][0][2]),
-               max(data['detected'][0][3],data['next'][0][3]))
-    converted_boxes.pop(converted_boxes.index(data['detected']))
-    converted_boxes.pop(converted_boxes.index(data['next']))
+               max(data['detected'][0][3],data['next'][0][3])]
+
+    index_to_remove1 = next((i for i, v in enumerate(converted_boxes) if v[0] == data['detected'][0]), None)
+    index_to_remove2 = next((i for i, v in enumerate(converted_boxes) if v[0] == data['next'][0]), None)
+
+    # If the item is found, remove it using pop
+    if index_to_remove1 is not None:
+        converted_boxes.pop(index_to_remove1)
+    if index_to_remove2 is not None:
+        converted_boxes.pop(index_to_remove2)
+    
     converted_boxes.append((new_box,new_word))
     return converted_boxes
 
@@ -160,8 +169,19 @@ def get_processed_boxes_and_words(img_path):
     image_dims = (output['pages'][0]["dimensions"][1], output['pages'][0]["dimensions"][0])
     graphical_coordinates, text_coordinates_and_word = get_words_coordinates(output)
     converted_boxes = convert_to_cartesian(text_coordinates_and_word, image_dims)
-    converted_boxes = merge_word_with_following(converted_boxes,'Restitué')
+    if find_next_right_word(converted_boxes,'Restitué') is not None:
+        converted_boxes = merge_word_with_following(converted_boxes,'Restitué')
     return converted_boxes,image_dims
+
+def postprocess_boxes_and_words(converted_boxes, block, safe, verbose):
+    converted_boxes = remove_word(converted_boxes, ":")
+    if block == 'block_2':
+        converted_boxes = merge_word_with_following(converted_boxes,'Restitué', safe, verbose)
+        converted_boxes = merge_word_with_following(converted_boxes,'Lieu', safe, verbose)
+    if block == 'block_5':
+        converted_boxes = merge_word_with_following(converted_boxes,'Nom', safe, verbose)
+
+    return converted_boxes
 
 
 # +
@@ -316,7 +336,7 @@ def plot_boxes_and_lines(bound, img_dims, non_crossing_lines=None):
 
 img_path = "data/performances_data/fleet_services_images/DM-984-VT_Proces_verbal_de_restitution_page-0001/DM-984-VT_Proces verbal de restitution_page-0001.jpg"
 converted_boxes,image_dims = get_processed_boxes_and_words(img_path)
-print(img_path)
+#print(img_path)
 
 
 plot_boxes(converted_boxes, image_dims)
@@ -420,10 +440,11 @@ def has_found_box(value):
 image_list = clean_listdir(FOLDER_IMAGES)
 ground_truths_list = [x + '.json' for x in image_list]
 print(ground_truths_list)
+print(image_list)
 
 # +
 result_template = get_result_template()
-print(result_template)
+#print(result_template)
 
 def flatten_dict(d, sep='_'):
     flattened = {}
@@ -442,18 +463,153 @@ for dico in actual_json_list:
     print(dico_flat)
     print('.    ')
 
+def get_flatten_result_template():
+    actual_json_list = [read_json(FOLDER_GROUND_TRUTHS/filename) for filename in clean_listdir(FOLDER_GROUND_TRUTHS)]
+    sample_json = flatten_dict(actual_json_list[0])
+    json_template = sample_json.keys()
+    return json_template
+
+result_template_flat = get_flatten_result_template()
+
+# Convert it to a list
+result_template_flat_list = list(result_template_flat)
+
+# Remove 'File Name' from the list
+if 'File Name' in result_template_flat_list:
+    result_template_flat_list.remove('File Name')
+
+print(result_template)
+
+
 # +
+all_results = []
+#image_list= image_list[1:2]
+print(image_list)
+
+for element in image_list:
+    print(f'==== Running for file: {element} =====')
+    filename_prefix = f'{element[:-5]}'
+
+    result_json = {}
+    result_json['File Name'] = element
+    
+    folder_with_blocs = FOLDER_IMAGES/element/'automaticbloc'
+    bloc_list = clean_listdir(folder_with_blocs)
+    print(bloc_list)
+
+    for bloc in bloc_list:
+        #print(bloc)
+        path_to_name_jpeg = FOLDER_IMAGES/element/'automaticbloc'/bloc
+        print(path_to_name_jpeg)
+
+        converted_boxes,image_dims = get_processed_boxes_and_words(img_path=path_to_name_jpeg)
+        #print(converted_boxes)
+        
+        #converted_boxes = postprocess_boxes_and_words(converted_boxes)
+        
+        for key_word in result_template_flat_list:
+            print(f'Running {key_word}')
+            result_json[key_word] = find_next_right_word(converted_boxes, key_word)
+            print(result_json[key_word])
+            if has_found_box(result_json[key_word]):
+                result_json[key_word] = result_json[key_word]['next']
+    all_results.append(result_json)
+    #print(all_results)
+    
+
+
+
+# +
+all_results = []
+#image_list= image_list[1:2]
+print(image_list)
+
+for element in image_list:
+    print(f'==== Running for file: {element} =====')
+    filename_prefix = f'{element[:-5]}'
+
+    result_json = {}
+    result_json['File Name'] = element
+    
+    folder_with_blocs = FOLDER_IMAGES/element/'automaticbloc'
+    bloc_list = clean_listdir(folder_with_blocs)
+    print(bloc_list)
+
+    for bloc in bloc_list:
+        #print(bloc)
+        path_to_name_jpeg = FOLDER_IMAGES/element/'automaticbloc'/bloc
+        print(path_to_name_jpeg)
+
+        converted_boxes,image_dims = get_processed_boxes_and_words(img_path=path_to_name_jpeg)
+        #print(converted_boxes)
+
+        for bn in list(result_template.keys()):
+            result_json[bn] = {}
+
+            for key_word in result_template[bn]:
+                print(f'Running {key_word}')
+                result_json[bn][key_word] = find_next_right_word(converted_boxes, key_word, 
+                                                             distance_margin=2, verbose=VERBOSE)
+                if has_found_box(result_json[bn][key_word]):
+                    result_json[bn][key_word] = result_json[bn][key_word]['next']
+    all_results.append(result_json)
+    
+
+
+        
+        
+        #converted_boxes = postprocess_boxes_and_words(converted_boxes)
+        
+        #for key_word in result_template_flat_list:
+        #    print(f'Running {key_word}')
+        #    result_json[key_word] = find_next_right_word(converted_boxes, key_word)
+        #    print(result_json[key_word])
+        #    if has_found_box(result_json[key_word]):
+          #      result_json[key_word] = result_json[key_word]['next']
+    #all_results.append(result_json)
+    #print(all_results)
+    
+print(all_results)
+
+
+# +
+def clean_predicted_data(data):
+    new_data = {}
+    new_data['File Name'] = data['File Name']
+
+    for block, values in [(el,_) for (el,_) in data.items() if el.startswith('block')]:
+        new_data[block] = {}
+        if isinstance(values, dict):
+            for key, content in values.items():
+                if isinstance(content, dict) and 'next' in content:
+                    new_data[block][key] = content['next'][1]
+                else:
+                    new_data[block][key] = content
+    return new_data
+
+predicted_dict_list = [clean_predicted_data(results) for results in all_results]
+print(predicted_dict_list)
+# -
+
 actual_json_list = [read_json(FOLDER_GROUND_TRUTHS/filename) for filename in clean_listdir(FOLDER_GROUND_TRUTHS)]
 
-for dico in actual_json_list:
-    print('.    ')
-    dico_flat = flatten_dict(dico)
-    print(dico_flat)
-    print('.    ')
+# +
+from performance_estimation import compute_metrics_for_multiple_jsons
+
+
+metrics = compute_metrics_for_multiple_jsons(predicted_dict_list, actual_json_list)
+print(metrics)
+
 # -
 
 # ## IV Perf estimation for the all batch
 
+actual_json_list = [read_json(FOLDER_GROUND_TRUTHS/filename) for filename in clean_listdir(FOLDER_GROUND_TRUTHS)]
+
+# +
+from performance_estimation import compute_metrics_for_multiple_jsons
 
 
+metrics = compute_metrics_for_multiple_jsons(predicted_dict_list, actual_json_list)
+print(metrics)
 
