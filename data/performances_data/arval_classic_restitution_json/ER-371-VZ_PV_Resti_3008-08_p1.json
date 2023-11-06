@@ -1,0 +1,20 @@
+{   "File Name": "ER-371-VZ_PV_Resti_3008-08_p1",
+    "block_2": {
+        "Immatriculé": "ER-371-VZ",
+        "Kilométrage": null,
+        "Restitué le": "08/09/2023",
+        "N° de série": null,
+        "Modèle": "3008",
+        "Garage": null,
+        "Lieu d'enlèvement": "6 rue PAUL Kruger Toulouse",
+        "Réceptionnaire": null,
+        "Couleur": "Rouge"
+    },
+    "block_4": {
+        "Nom et prénom": "GUAUDUCHAU Richard",
+        "E-mail": "richard.gauduchau@truckbammer.fr",
+        "Tél": "06 71 56 66 77",
+        "le": "08/09/2023",
+        "Société": "Truckbammer" 
+    }
+}
