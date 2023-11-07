@@ -187,51 +187,54 @@ def postprocess_boxes_and_words(converted_boxes, block, safe, verbose):
 # +
 #Function find line and cut the doc:
 
-def find_max_spacing_non_crossing_lines(bound, img_height, max_lines=1):
-    non_crossing_lines = []
+import random
+
+from bisect import bisect_left
+
+def find_closest_lines(all_lines, reference_lines):
+    closest_lines = []
+
+    for ref_line in reference_lines:
+        # Find the insertion point where the line would go in the sorted list
+        insert_point = bisect_left(all_lines, ref_line)
+        # Find the closest line by comparing the insertion point and the previous line
+        if insert_point == 0:
+            closest_lines.append(all_lines[0])
+        elif insert_point == len(all_lines):
+            closest_lines.append(all_lines[-1])
+        else:
+            before = all_lines[insert_point - 1]
+            after = all_lines[insert_point]
+            closest_lines.append(before if (ref_line - before) <= (after - ref_line) else after)
+
+    return closest_lines
+
+
+
+def find_max_spacing_non_crossing_lines(converted_box, img_height, line_number=4):
+    # Parse the bounding boxes into a simpler format
+    bounds = [(box[0][2], box[0][3]) for box in converted_box]
 
     # Define a function to check if a line crosses a bounding box
     def does_line_cross_box(y, box):
-        _, _, y1, y2 = box
-        return y >= y1 and y <= y2
+        y1, y2 = box
+        return y1 <= y <= y2
 
     # Iterate through possible y-coordinates (lines)
-    for y in range(img_height):
-        crosses = False
-
-        # Check if the line crosses any bounding boxes
-        for b in bound:
-            b1 = b[0]
-            if does_line_cross_box(y, b1):
-                crosses = True
-                break  # No need to check other boxes if it crosses one
-
-        # If the line doesn't cross any bounding boxes, add it to the list
-        if not crosses:
-            non_crossing_lines.append(y)
+    non_crossing_lines = [y for y in range(img_height) if not any(does_line_cross_box(y, b) for b in bounds)]
 
     # Sort the non-crossing lines based on their position
     non_crossing_lines.sort()
 
-    # Calculate the available space between the lines
-    available_space = [non_crossing_lines[i+1] - non_crossing_lines[i] for i in range(len(non_crossing_lines) - 1)]
+    theoretical_dividing_number = 0
+    theoretical_dividing = []
+    for i in range(line_number):
+        theoretical_dividing_number += (img_height/line_number)
+        #print(theoretical_dividing_number)
+        theoretical_dividing.append(theoretical_dividing_number)
 
-    # Randomly select a number of lines up to the maximum specified
-    num_lines = min(max_lines, len(non_crossing_lines))
+    selected_lines = find_closest_lines(non_crossing_lines, theoretical_dividing)
     
-    # Select lines that maximize the spacing between them
-    selected_lines = []
-
-    while len(selected_lines) < num_lines:
-        # Find the index of the largest available space
-        max_space_index = available_space.index(max(available_space))
-        
-        # Add the corresponding line to the selected lines
-        selected_lines.append(non_crossing_lines[max_space_index + 1])
-        
-        # Update the available space list by removing the used space
-        available_space.pop(max_space_index)
-
     return selected_lines
 
 def cut_and_save_image(input_image_path, output_folder, selected_lines):
@@ -249,13 +252,14 @@ def cut_and_save_image(input_image_path, output_folder, selected_lines):
     selected_lines.insert(0, 0)
 
     # Loop through the selected lines and cut the image accordingly
-    for i, y1 in enumerate(selected_lines):
+    for i, y1 in enumerate(selected_lines):  
         if i < len(selected_lines) - 1:
-            y2 = selected_lines[i + 1]
+            y2 = selected_lines[i+1]
         else:
-            y2 = image.shape[0]  # Use the image height for the last segment
+            return
 
         # Crop the image
+        print('y1 =',y1,'y2 =',y2)
         cropped_image = image[y1:y2, :]
 
         # Generate an output filename
@@ -268,7 +272,6 @@ def cut_and_save_image(input_image_path, output_folder, selected_lines):
             print(f"Saved {output_filename}")
         else:
             print(f"Error: Cropped image is empty for Line {i + 1}")
-
 
 # +
 #Print function:
@@ -334,7 +337,8 @@ def plot_boxes_and_lines(bound, img_dims, non_crossing_lines=None):
 
 # ## I. Running the detection & recognition model
 
-img_path = "data/performances_data/fleet_services_images/DM-984-VT_Proces_verbal_de_restitution_page-0001/DM-984-VT_Proces verbal de restitution_page-0001.jpg"
+img_path = "data/performances_data/arval_classic_restitution_images/DH-427-VH_PV_RESTITUTION_DH-427-VH_p1.jpeg"
+#img_path = "data/performances_data/fleet_services_images/DM-984-VT_Proces_verbal_de_restitution_page-0001/DM-984-VT_Proces verbal de restitution_page-0001.jpg"
 converted_boxes,image_dims = get_processed_boxes_and_words(img_path)
 #print(img_path)
 
@@ -346,12 +350,19 @@ image_dims[1]
 # ## II. Dividing image in bloc 
 
 img_height = image_dims[1]
-line_number = 4
-non_crossing_lines = find_max_spacing_non_crossing_lines(converted_boxes, img_height,line_number)
+line_num = 4
+non_crossing_lines= find_max_spacing_non_crossing_lines(converted_boxes, img_height,line_num)
 print("Non-crossing lines:", non_crossing_lines)
 
+# +
 plot_boxes_and_lines(converted_boxes, image_dims,non_crossing_lines)
+output_fold = "data/performances_data/fleet_services_images/DM-984-VT_Proces_verbal_de_restitution_page-0001/autotest"
+output_fold= "data/performances_data/arval_classic_restitution_images/autotest"
 
+cut_and_save_image(img_path, output_fold, non_crossing_lines)
+
+
+# -
 
 def subdivising_image(input_img,out_bloc_folder,line_number):
     converted_boxes,image_dims = get_processed_boxes_and_words(img_path)
