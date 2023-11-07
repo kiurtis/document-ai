@@ -220,7 +220,7 @@ def merge_word_with_following(converted_boxes, key_word, distance_margin=1, max_
                                     max_distance=max_distance, verbose=verbose)
         if verbose:
             print('data\n', data)
-        print(data)
+       #print(data)
         new_word = data['detected'][1] + ' ' + data['next'][1]
         new_box = (min(data['detected'][0][0], data['next'][0][0]),
                    max(data['detected'][0][1], data['next'][0][1]),

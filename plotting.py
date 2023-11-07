@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from PIL import ImageDraw
 import PIL
+import random
 
 from document_parsing import get_block_coordinates
 
@@ -59,4 +60,61 @@ def plot_centroids(bound, img_dims):
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.title('Center of Words')
+    plt.show()
+
+#Function to print subdivision of image
+
+def plot_boxes(bound, img_dims):
+    # Extract the dimensions of the image
+    img_width, img_height = img_dims
+    
+    for b in bound:
+        b1 = b[0]
+        # Extract the coordinates of the bounding box
+        x1, x2, y1, y2 = b1
+        # Define the four corners of the box
+        box_corners = [(x1, y1), (x2, y1), (x2, y2), (x1, y2), (x1, y1)]
+        # Extract x and y coordinates separately
+        x_coords, y_coords = zip(*box_corners)
+        # Plot the bounding box
+        plt.plot(x_coords, y_coords, color='red')
+        
+    plt.xlim(0, img_width)
+    plt.ylim(0, img_height)  # Start the y-axis at the top to match image coordinates
+    plt.gca().set_aspect('equal', adjustable='box')  # Keep the aspect ratio square
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('Bounding Boxes')
+    plt.show()
+
+def plot_boxes_and_lines(bound, img_dims, non_crossing_lines=None):
+    # Extract the dimensions of the image
+    img_width, img_height = img_dims
+    
+    # Create a random color for the non-crossing lines
+    non_crossing_line_color = "#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)])
+
+    for b in bound:
+        b1 = b[0]
+        # Extract the coordinates of the bounding box
+        x1, x2, y1, y2 = b1
+        # Define the four corners of the box
+        box_corners = [(x1, y1), (x2, y1), (x2, y2), (x1, y2), (x1, y1)]
+        # Extract x and y coordinates separately
+        x_coords, y_coords = zip(*box_corners)
+        # Plot the bounding box in red
+        plt.plot(x_coords, y_coords, color='red')
+
+    # Plot the non-crossing horizontal lines in a random color
+    if non_crossing_lines:
+        for y in non_crossing_lines:
+            plt.axhline(y, color=non_crossing_line_color, linestyle='--', label="Non-Crossing Lines")
+
+    plt.xlim(0, img_width)
+    plt.ylim(0, img_height)  # Start the y-axis at the top to match image coordinates
+    plt.gca().set_aspect('equal', adjustable='box')  # Keep the aspect ratio square
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('Bounding Boxes and Non-Crossing Lines')
+    plt.legend()
     plt.show()
