@@ -9,7 +9,7 @@ from Levenshtein import distance
 from loguru import logger
 
 from utils import clean_listdir, read_json,get_result_template
-from pipeline import get_processed_boxes_and_words, postprocess_boxes_and_words
+from pipeline import get_processed_boxes_and_words, postprocess_boxes_and_words,postprocess_boxes_and_words_unguided_bloc
 from plotting import plot_boxes_with_text
 from document_parsing import find_next_right_word
 
@@ -25,10 +25,24 @@ def compute_filling_accuracy(predicted, actual):
     correct_keys = sum([
         (predicted[key] == "<EMPTY>" and actual[key] is None) or
         (predicted[key] == None and actual[key] is None) or
-        (predicted[key] == "<NOT_FOUND>" and actual[key] is None) or
+       #(predicted[key] == "<NOT_FOUND>" and actual[key] is None) or
         ((predicted[key] != "<NOT_FOUND>" and predicted[key] != "<EMPTY>") and actual[key] != None )
         for key in actual])
     return correct_keys / total_keys
+
+def compute_false_positive_filling_accuracy(predicted, actual):
+    total_keys = len(actual)
+    false_positives = sum([
+        (predicted[key] != "<NOT_FOUND>" and predicted[key] != "<EMPTY>" and actual[key] is None)
+        for key in actual
+    ])
+    # Avoid division by zero
+    if total_keys == 0:
+        return None  # or 0, depending on how you want to handle this edge case
+
+    return false_positives / total_keys
+
+
 
 def compute_content_accuracy(predicted, actual):
     total_keys = len(actual)
@@ -69,6 +83,7 @@ def compute_metrics_for_multiple_jsons(predicted_list, actual_list):
     all_metrics = {
         'general': {
             'Filling Accuracy': [],
+            'FP Filling Accuracy': [],
             'Content Accuracy': [],
             'Content Fuzzy Accuracy': []
         },
@@ -83,6 +98,7 @@ def compute_metrics_for_multiple_jsons(predicted_list, actual_list):
         if file_name not in all_metrics['by_file']:
             all_metrics['by_file'][file_name] = {
                 'Filling Accuracy': [],
+                'FP Filling Accuracy': [],
                 'Content Accuracy': [],
                 'Content Fuzzy Accuracy': []
             }
@@ -94,10 +110,12 @@ def compute_metrics_for_multiple_jsons(predicted_list, actual_list):
                     key_actual = {key: value}
 
                     all_metrics['general']['Filling Accuracy'].append(compute_filling_accuracy(key_predicted, key_actual))
+                    all_metrics['general']['FP Filling Accuracy'].append(compute_false_positive_filling_accuracy(key_predicted, key_actual))
                     all_metrics['general']['Content Accuracy'].append(compute_content_accuracy(key_predicted, key_actual))
                     all_metrics['general']['Content Fuzzy Accuracy'].append(compute_content_fuzzy_accuracy(key_predicted, key_actual))
 
                     all_metrics['by_file'][file_name]['Filling Accuracy'].append(compute_filling_accuracy(key_predicted, key_actual))
+                    all_metrics['by_file'][file_name]['FP Filling Accuracy'].append(compute_false_positive_filling_accuracy(key_predicted, key_actual))
                     all_metrics['by_file'][file_name]['Content Accuracy'].append(compute_content_accuracy(key_predicted, key_actual))
                     all_metrics['by_file'][file_name]['Content Fuzzy Accuracy'].append(compute_content_fuzzy_accuracy(key_predicted, key_actual))
 
@@ -105,11 +123,13 @@ def compute_metrics_for_multiple_jsons(predicted_list, actual_list):
                     if block_name not in all_metrics['by_block']:
                         all_metrics['by_block'][block_name] = {
                             'Filling Accuracy': [],
+                            'FP Filling Accuracy': [],
                             'Content Accuracy': [],
                             'Content Fuzzy Accuracy': []
                         }
 
                     all_metrics['by_block'][block_name]['Filling Accuracy'].append(compute_filling_accuracy(key_predicted, key_actual))
+                    all_metrics['by_block'][block_name]['FP Filling Accuracy'].append(compute_false_positive_filling_accuracy(key_predicted, key_actual))
                     all_metrics['by_block'][block_name]['Content Accuracy'].append(compute_content_accuracy(key_predicted, key_actual))
                     all_metrics['by_block'][block_name]['Content Fuzzy Accuracy'].append(compute_content_fuzzy_accuracy(key_predicted, key_actual))
 
@@ -117,11 +137,13 @@ def compute_metrics_for_multiple_jsons(predicted_list, actual_list):
                     if key not in all_metrics['by_key']:
                         all_metrics['by_key'][key] = {
                             'Filling Accuracy': [],
+                            'FP Filling Accuracy': [],
                             'Content Accuracy': [],
                             'Content Fuzzy Accuracy': []
                         }
 
                     all_metrics['by_key'][key]['Filling Accuracy'].append(compute_filling_accuracy(key_predicted, key_actual))
+                    all_metrics['by_key'][key]['FP Filling Accuracy'].append(compute_false_positive_filling_accuracy(key_predicted, key_actual))
                     all_metrics['by_key'][key]['Content Accuracy'].append(compute_content_accuracy(key_predicted, key_actual))
                     all_metrics['by_key'][key]['Content Fuzzy Accuracy'].append(compute_content_fuzzy_accuracy(key_predicted, key_actual))
 
@@ -185,6 +207,70 @@ def run_batch_analysis(image_list, hyperparameters, verbose, plot_boxes=False):
                     result_json[bn][key_word] = result_json[bn][key_word]['next']
         all_results.append(result_json)
     return all_results
+
+
+
+def run_batch_analysis_undefined_blocs(image_list, hyperparameters, verbose, plot_boxes=False):
+    all_results = []
+    print(RESULT_TEMPLATE)
+    for element in image_list:
+        print(f'==== Running for file: {element} =====')
+        filename_prefix = f'{element[:-5]}'
+
+        result_json = {}
+        result_json['File Name'] = element
+
+        folder_with_blocs = FOLDER_IMAGES/element/'automaticbloc'
+        bloc_list = clean_listdir(folder_with_blocs)
+        print(bloc_list)
+        for bloc in bloc_list:
+       
+            path_to_name_jpeg = FOLDER_IMAGES/element/'automaticbloc'/bloc
+            print(path_to_name_jpeg)
+
+            converted_boxes = get_processed_boxes_and_words(img_path=path_to_name_jpeg,
+                                                            block=1,
+                                                            det_arch=hyperparameters['det_arch'],
+                                                            reco_arch=hyperparameters['reco_arch'],
+                                                            pretrained=hyperparameters['pretrained'],
+                                                            verbose=verbose)
+            if plot_boxes:
+                plot_boxes_with_text(converted_boxes)
+                
+            converted_boxes = postprocess_boxes_and_words_unguided_bloc(converted_boxes,
+                                                                      verbose=verbose,
+                                                                      safe=True)
+
+            for bn in list(RESULT_TEMPLATE.keys()):
+                if bn not in result_json:
+                    result_json[bn] = {}
+
+                for key_word in RESULT_TEMPLATE[bn]:
+                    if verbose:
+                        print(f'Running {key_word}')
+                    
+                    if bn in result_json and key_word in result_json[bn]:
+                        if result_json[bn][key_word] == "<EMPTY>" or result_json[bn][key_word] == "<NOT_FOUND>": 
+                            result_json[bn][key_word] = find_next_right_word(converted_boxes, key_word,
+                                                                     distance_margin=hyperparameters['distance_margin'],
+                                                                     max_distance=hyperparameters['max_distance'],
+                                                                     minimum_overlap=hyperparameters['minimum_overlap'],
+                                                                     verbose=verbose)
+                            if has_found_box(result_json[bn][key_word]):
+                                result_json[bn][key_word] = result_json[bn][key_word]['next']
+                    else:
+                        result_json[bn][key_word] = find_next_right_word(converted_boxes, key_word,
+                                                                     distance_margin=hyperparameters['distance_margin'],
+                                                                     max_distance=hyperparameters['max_distance'],
+                                                                     minimum_overlap=hyperparameters['minimum_overlap'],
+                                                                     verbose=verbose)
+                        if has_found_box(result_json[bn][key_word]):
+                            result_json[bn][key_word] = result_json[bn][key_word]['next']
+        all_results.append(result_json)
+    return all_results
+
+
+
 
 
 def clean_predicted_data(data):
