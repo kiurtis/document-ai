@@ -26,7 +26,7 @@ def compute_filling_accuracy(predicted, actual):
         (predicted[key] == "<EMPTY>" and actual[key] is None) or
         (predicted[key] == None and actual[key] is None) or
        #(predicted[key] == "<NOT_FOUND>" and actual[key] is None) or
-        ((predicted[key] != "<NOT_FOUND>" and predicted[key] != "<EMPTY>") and actual[key] != None )
+        ((predicted[key] != "<NOT_FOUND>" and predicted[key] != "<EMPTY>") and actual[key] is not None )
         for key in actual])
     return correct_keys / total_keys
 
