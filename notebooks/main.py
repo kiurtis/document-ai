@@ -35,7 +35,7 @@ from pipeline import get_processed_boxes_and_words,postprocess_boxes_and_words
 from document_parsing import find_next_right_word
 from performance_estimation import has_found_box
 from plotting import plot_boxes_with_text
-
+from Levenshtein import distance as l_distance
 
 from utils import get_result_template
 from pathlib import Path
@@ -49,7 +49,7 @@ def verify_number_plate_format(s):
     return bool(re.match(pattern, s))
 
 class DocumentAnalyzer:
-    def __init__(self, document_name, path_to_document):
+    def __init__(self, document_name, path_to_document,hyperparameters):
         self.document_name = document_name
         self.path_to_document = path_to_document
         self.results = {} #To be filled with results of analysis
@@ -197,9 +197,9 @@ class DocumentAnalyzer:
                                                                  max_distance=hyperparameters['max_distance'],
                                                                  minimum_overlap=hyperparameters['minimum_overlap'],
                                                                  verbose=verbose)
-                if has_found_box(self.result_json_block_2[key_word]):
-                    self.result_json_block_2[key_word] = self.result_json_block_2[key_word]['next']
 
+                if isinstance(self.result_json_block_2[key_word], dict):
+                    self.result_json_block_2[key_word] = self.result_json_block_2[key_word]['next'][1]
         
         
 
@@ -231,10 +231,12 @@ class DocumentAnalyzer:
                                                                  max_distance=hyperparameters['max_distance'],
                                                                  minimum_overlap=hyperparameters['minimum_overlap'],
                                                                  verbose=verbose)
-                if has_found_box(self.result_json_block_4[key_word]):
-                    self.result_json_block_4[key_word] = self.result_json_block_4[key_word]['next']
-
-        
+            
+                
+                #if has_found_box(self.result_json_block_4[key_word]):
+                if isinstance(self.result_json_block_4[key_word], dict):
+                    self.result_json_block_4[key_word] = self.result_json_block_4[key_word]['next'][1]
+                    
 
     def analyze_block2_signature(self):
         raise NotImplementedError
@@ -244,12 +246,11 @@ class DocumentAnalyzer:
 
 
         
-
     def analyze(self):
         self.get_blocks()
         self.get_result_template()
-        self.analyze_block2_text()
-        self.analyze_block4_text()
+        self.analyze_block2_text(verbose=False,plot_boxes=True)
+        self.analyze_block4_text(verbose=False,plot_boxes=True)
         #self.analyze_block2_signature()
         #self.analyze_block4_signature()
 
@@ -282,8 +283,7 @@ class ResultValidator:
         raise NotImplementedError
 
     def validate_mileage(self):
-        print('immat', self.result['block_2']['Immatriculé'])
-        self.mileage_is_ok = self.result['block_2']['Immatriculé'].isdigit()
+        self.mileage_is_ok = self.result['block_2']['Kilométrage'].isdigit()
 
     def validate_number_plate_is_filled(self):
         self.number_plate_is_filled = self.result['block_2']['Immatriculé'] != "<EMPTY>"
@@ -293,10 +293,18 @@ class ResultValidator:
         self.number_plate_is_right = verify_number_plate_format(plate_number)
         
     def validate_block4_is_filled_by_company(self):
-        raise NotImplementedError
+        company_name = self.result['block_4']['Société']
+        self.block4_is_filled_by_company = company_name not in ["<EMPTY>", "<NOT_FOUND>"] and l_distance(company_name, "Pop Valet") > 4
+
 
     def validate_block4_is_filled(self):
-        raise NotImplementedError
+        #TO DO: Check how we want to define this function
+        self.block4_is_filled = any(
+            value not in ["<EMPTY>", "<NOT_FOUND>"] for value in self.result['block_4'].values()
+            )
+
+        
+        
 
     def gather_refused_motivs(self):
         # Initialize an empty list to store the names of variables that are False
@@ -313,10 +321,10 @@ class ResultValidator:
             self.refused_causes.append('number_plate_is_filled')
         if not self.number_plate_is_right:
             self.refused_causes.append('number_plate_is_right')
-        #if not self.block4_is_filled:
-        #   self.refused_motiv.append('block4_is_filled')
-        #if not self.block4_is_filled_by_company:
-        #   self.refused_motiv.append('block4_is_filled_by_company')
+        if not self.block4_is_filled:
+           self.refused_causes.append('block4_is_filled')
+        if not self.block4_is_filled_by_company:
+           self.refused_causes.append('block4_is_filled_by_company')
 
         
 
@@ -325,10 +333,9 @@ class ResultValidator:
         #self.validate_stamp()
         self.validate_mileage()
         self.validate_number_plate_is_filled()
-        self.validate_number_plate_is_right()
-        
-        #self.validate_block4_is_filled()
-        #self.validate_block4_is_filled_by_company()
+        self.validate_number_plate_is_right()        
+        self.validate_block4_is_filled()
+        self.validate_block4_is_filled_by_company()
         self.gather_refused_motivs()
 
         self.validated = self.signature_is_ok and self.stamp_is_ok and self.mileage_is_ok and self.number_plate_is_filled and self.number_plate_is_right and self.block4_is_filled and self.block4_is_filled_by_company
@@ -369,13 +376,13 @@ hyperparameters = {'det_arch':"db_resnet50",
         'reco_arch':"crnn_mobilenet_v3_large",
         'pretrained':True ,
         'distance_margin': 10, # find_next_right_word for words_similarity
-        'max_distance':  100, # find_next_right_word
+        'max_distance':  300, # find_next_right_word
         'minimum_overlap': 20 # find_next_right_word for _has_overlap
 }
 
 full_result_analysis = pd.DataFrame(columns=['document_name', 'true_status', 'predicted_status', 'true_cause', 'predicted_cause'])
 for name, info in all_documents.items():
-    document_analyzer = DocumentAnalyzer(name, info['path'])
+    document_analyzer = DocumentAnalyzer(name, info['path'],hyperparameters)
     document_analyzer.analyze()
     print(document_analyzer.results)
     result_validator = ResultValidator(document_analyzer.results)
@@ -390,7 +397,7 @@ for name, info in all_documents.items():
         'predicted_cause': [", ".join(result_validator.refused_causes)]
         }, index=[0])
         ])
-    
+    document_analyzer.print_blocks()
     #print(result_validator.validated)
     break
 
@@ -399,6 +406,22 @@ print(full_result_analysis)
 
 document_analyzer.print_blocks()
 
+print(full_result_analysis)
 
+# +
+from doctr.io import DocumentFile
+from doctr.models import ocr_predictor
+
+model = ocr_predictor(pretrained=True)
+# PDF
+doc = DocumentFile.from_images("data/performances_data/arval_classic_restitution_images/test_signa/EK-744-NX_EK-744-NX_procès_verbal_de_restitution_définitive_Arval_exemplaire_locataire client_p1_bloc_2_info.jpeg")
+# Analyze
+result = model(doc)
+
+
+
+# -
+
+result.show(doc)
 
 
