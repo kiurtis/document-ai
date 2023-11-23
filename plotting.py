@@ -6,7 +6,7 @@ import random
 
 from document_parsing import get_block_coordinates
 
-def plot_boxes_with_text(data):
+def plot_boxes_with_text(data,doc_size):
     """
     Plots given bounding boxes and their associated text.
 
@@ -24,8 +24,8 @@ def plot_boxes_with_text(data):
         ax.add_patch(rect)
         plt.text(x_min, y_min, word, color='blue', verticalalignment='bottom')
 
-    ax.set_ylim(0, 300)  # adjust these values if necessary
-    ax.set_xlim(0, 1200)  # adjust these values if necessary
+    ax.set_ylim(0, doc_size[1])  # adjust these values if necessary
+    ax.set_xlim(0, doc_size[0])  # adjust these values if necessary
     plt.show()
 
 def print_blocks_on_document(output, img_path):

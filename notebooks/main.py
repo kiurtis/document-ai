@@ -29,9 +29,12 @@ import json
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
+# %load_ext autoreload
+# %autoreload 2
+
 #Importing functions
 from template_matching_function import get_image_dimensions,arval_classic_create_bloc2,arval_classic_create_bloc4,draw_contour_rectangles_on_image,crop_and_save_image,arval_classic_divide_and_crop_bloc2,arval_classic_divide_and_crop_bloc4
-from pipeline import get_processed_boxes_and_words,postprocess_boxes_and_words
+from pipeline import get_processed_boxes_and_words,postprocess_boxes_and_words_arval_classic_restitution
 from document_parsing import find_next_right_word
 from performance_estimation import has_found_box
 from plotting import plot_boxes_with_text
@@ -180,14 +183,15 @@ class DocumentAnalyzer:
                                                         reco_arch=hyperparameters['reco_arch'],
                                                         pretrained=hyperparameters['pretrained'],
                                                         verbose=verbose)
-
-        if plot_boxes:
-            plot_boxes_with_text(converted_boxes)
         
-        converted_boxes = postprocess_boxes_and_words(converted_boxes,
+        
+        converted_boxes = postprocess_boxes_and_words_arval_classic_restitution(converted_boxes,
                                                           block='block_2',
                                                           verbose=verbose,
                                                           safe=True)
+        if plot_boxes:
+            new_dimensions = get_image_dimensions(self.bloc_2_info_path)
+            plot_boxes_with_text(converted_boxes,new_dimensions)
         
         for key_word in self.template['block_2']:
                 if verbose:
@@ -214,13 +218,15 @@ class DocumentAnalyzer:
                                                         pretrained=hyperparameters['pretrained'],
                                                         verbose=verbose)
 
-        if plot_boxes:
-            plot_boxes_with_text(converted_boxes)
 
-        converted_boxes = postprocess_boxes_and_words(converted_boxes,
+            
+        converted_boxes = postprocess_boxes_and_words_arval_classic_restitution(converted_boxes,
                                                           block='block_4',
                                                           verbose=verbose,
                                                           safe=True)
+        if plot_boxes:
+            new_dimensions = get_image_dimensions(self.bloc_4_info_path)
+            plot_boxes_with_text(converted_boxes,new_dimensions)
         
                     
         for key_word in self.template['block_4']:
@@ -375,9 +381,9 @@ for file_name in image_files:
 hyperparameters = {'det_arch':"db_resnet50",
         'reco_arch':"crnn_mobilenet_v3_large",
         'pretrained':True ,
-        'distance_margin': 10, # find_next_right_word for words_similarity
-        'max_distance':  300, # find_next_right_word
-        'minimum_overlap': 20 # find_next_right_word for _has_overlap
+        'distance_margin': 5, # find_next_right_word for words_similarity
+        'max_distance':  400, # find_next_right_word
+        'minimum_overlap': 10 # find_next_right_word for _has_overlap
 }
 
 full_result_analysis = pd.DataFrame(columns=['document_name', 'true_status', 'predicted_status', 'true_cause', 'predicted_cause'])
@@ -385,6 +391,7 @@ for name, info in all_documents.items():
     document_analyzer = DocumentAnalyzer(name, info['path'],hyperparameters)
     document_analyzer.analyze()
     print(document_analyzer.results)
+    break
     result_validator = ResultValidator(document_analyzer.results)
     result_validator.validate()
 
@@ -404,7 +411,7 @@ for name, info in all_documents.items():
 print(full_result_analysis)
 # -
 
-document_analyzer.print_blocks()
+document_analyzer.bloc_2_info_path
 
 print(full_result_analysis)
 
@@ -414,7 +421,7 @@ from doctr.models import ocr_predictor
 
 model = ocr_predictor(pretrained=True)
 # PDF
-doc = DocumentFile.from_images("data/performances_data/arval_classic_restitution_images/test_signa/EK-744-NX_EK-744-NX_procès_verbal_de_restitution_définitive_Arval_exemplaire_locataire client_p1_bloc_2_info.jpeg")
+doc = DocumentFile.from_images(document_analyzer.bloc_2_info_path)
 # Analyze
 result = model(doc)
 

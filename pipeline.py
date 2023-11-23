@@ -48,6 +48,33 @@ def postprocess_boxes_and_words(converted_boxes, block, safe, verbose, **kwargs)
     return converted_boxes
 
 
+
+def postprocess_boxes_and_words_arval_classic_restitution(converted_boxes, block, safe, verbose, **kwargs):
+    """
+    kwargs: arguments for merge_word_with_following
+    """
+    converted_boxes = remove_word(converted_boxes, ":")
+    if block == 'block_2':
+        converted_boxes = merge_word_with_following(converted_boxes=converted_boxes,
+                                                    key_word='Restitué',
+                                                    safe=safe,
+                                                    verbose=verbose,
+                                                    **kwargs)
+        converted_boxes = merge_word_with_following(converted_boxes=converted_boxes,
+                                                    key_word='Lieu',
+                                                    safe=safe,
+                                                    verbose=verbose,
+                                                    **kwargs)
+    if block == 'block_4':
+        converted_boxes = merge_word_with_following(converted_boxes=converted_boxes,
+                                                    key_word='Nom,',
+                                                    safe=safe,
+                                                    verbose=verbose,
+                                                    **kwargs)
+    return converted_boxes
+
+
+
 #Pipeline functions for unguided bloc division: 
 
 
