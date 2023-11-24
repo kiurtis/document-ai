@@ -307,6 +307,9 @@ for file_name in image_files:
     #break
     
 print("All files have been processed.")
+# -
+
+# # Checking if there is a signature/ stamp
 
 # +
 from template_matching_function import multi_scale_template_matching
@@ -386,10 +389,13 @@ def crop_bloc2_signature(file_path_bloc2, output_fold, file_name, template_path_
         blocs_signbloc2 = [list_coord_signa_bloc2_1,list_coord_signa_bloc2_2,list_coord_signa_bloc2_3]
         #print(blocs_signbloc2)
         inner_rectangle = find_custom_rectangle(blocs_signbloc2)
-        #print(inner_rectangle)
+        print(inner_rectangle)
     
         #draw_contour_rectangles_on_image(file_path_bloc2, blocs_signbloc2)
         draw_contour_rectangles_on_image(file_path_bloc2, [inner_rectangle])
+
+        is_uniform = check_region_uniformity(file_path_bloc2, inner_rectangle)
+        print("Uniformly white?" if is_uniform else "Contains other elements")
 
         #bloc_2_info, bloc_2_sign = crop_image_around_reference(file_path_bloc2, list_coord_signa_bloc2)
 
@@ -430,17 +436,44 @@ rectangles = [((3, 3), (690, 150)), ((6, 299), (721, 374)), ((569, 5), (675, 371
 custom_rectangle = find_custom_rectangle(rectangles)
 print(custom_rectangle)
 
+import cv2
+import numpy as np
 
-# Example usage
-rectangles = [((3, 3), (690, 150)), ((6, 299), (721, 374)), ((569, 5), (675, 371))]
-enclosing_rectangle = find_enclosing_rectangle(rectangles)
-print(enclosing_rectangle)
+def check_region_uniformity(image_path, rectangle):
+    # Load the image
+    image = cv2.imread(image_path)
+
+    # Ensure the image was loaded successfully
+    if image is None:
+        print("Error: Image not found")
+        return
+
+    # Crop the region from the image
+    # Rectangle format: ((start_x, start_y), (end_x, end_y))
+    start_x, start_y = rectangle[0]
+    end_x, end_y = rectangle[1]
+    cropped_region = image[start_y:end_y, start_x:end_x]
+
+    # Convert to grayscale for easier analysis
+    gray_region = cv2.cvtColor(cropped_region, cv2.COLOR_BGR2GRAY)
+
+    # Check if the region is uniformly white
+    # You may need to adjust the threshold value depending on the definition of 'white' in your context
+    white_threshold = 240 # Assuming pixel values above 240 (out of 255) are considered white
+    if np.all(gray_region >= white_threshold):
+        return True  # The region is uniformly white
+    else:
+        return False  # The region contains other elements
+
+
+
 
 
 # +
 output_fold = "data/performances_data/arval_classic_restitution_images/test_signa/"
 file_path_bloc2 = "data/performances_data/arval_classic_restitution_images/test_signa/EK-744-NX_EK-744-NX_procès_verbal_de_restitution_définitive_Arval_exemplaire_locataire client_p1_bloc_2_sign.jpeg"
 file_name ="EK-744-NX_EK-744-NX_procès_verbal_de_restitution_définitive_Arval_exemplaire_locataire client_p1_bloc_2_sign.jpeg"
+#file_path_bloc2 ="data/performances_data/arval_classic_restitution_images/test_signa/EQ-807-SZ_PV_de_reprise_EQ-807-SZ_p1_bloc_2_sign.jpeg"
 template_path_signature_bloc2_top = 'data/performances_data/arval_classic_restitution_images/template/template_path_signature_bloc2_top.png'
 template_path_signature_bloc2_bottom = 'data/performances_data/arval_classic_restitution_images/template/template_path_signature_bloc2_bottom.png'
 template_path_signature_bloc2_right = 'data/performances_data/arval_classic_restitution_images/template/template_path_signature_bloc2_right.png'
@@ -456,6 +489,12 @@ print(get_image_dimensions(template_path_signature_bloc2_bottom))
 print(get_image_dimensions(file_path_bloc2))
 
 crop_bloc2_signature(file_path_bloc2, output_fold, file_name, template_path_signature_bloc2_top,template_path_signature_bloc2_bottom,template_path_signature_bloc2_right)
+
+# Example usage
+#rectangle = ((3, 150), (569, 299))
+#is_uniform = check_region_uniformity(file_path_bloc2, rectangle)
+#print("Uniformly white?" if is_uniform else "Contains other elements")
+
 
 # +
 
@@ -536,7 +575,7 @@ for file_name in image_files:
             out_croped_bloc2_path = output_fold +'bloc2_'+file_name
             print(out_croped_bloc2_path)
             print(bloc_2_sign_path)
-            place_image_in_center(bloc_2_sign_path, new_dimensions, out_croped_bloc2_path)
+            #place_image_in_center(bloc_2_sign_path, new_dimensions, out_croped_bloc2_path)
 
         except Exception as e:
             print('-----------------')
