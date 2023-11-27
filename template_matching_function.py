@@ -1,18 +1,23 @@
 from PIL import Image
+import os
+from loguru import logger
+from pathlib import Path
+
+from dotenv import load_dotenv, find_dotenv
+import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
-import os
-from pathlib import Path
-import matplotlib.image as mpimg
 
+load_dotenv(find_dotenv())
+PLOT_MATCHED_BLOCKS = os.environ.get('PLOT_MATCHED_BLOCKS')
 
 def get_image_dimensions(image_path):
     with Image.open(image_path) as img:
         return img.size  # Returns a tuple (width, height)
 
 # Function to perform template matching at multiple scales
-def multi_scale_template_matching(image_path, template_path, print_img=False):
+def multi_scale_template_matching(image_path, template_path, plot_img=False):
 
     def apply_template_matching(img, template, scale, results):
         resized_template = cv2.resize(template, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
@@ -25,32 +30,34 @@ def multi_scale_template_matching(image_path, template_path, print_img=False):
 
         return results
 
-    def get_best_match(img, template, scales, results):
+    def get_best_match_to_template(img, template, scales, results):
         # Perform initial template matching
         for scale in scales:
-            results = apply_template_matching(img, template, scale, results)
-
+            try:
+                results = apply_template_matching(img, template, scale, results)
+            except cv2.error as e:
+                logger.warning(f"Error {e} while applying template matching at scale {scale}")
         # Sort the results by match quality
         sorted_results = sorted(results, key=lambda x: x[0], reverse=True)
         best_match_quality, best_match_coordinates, best_scale = sorted_results[0]
         return best_match_quality, best_match_coordinates, best_scale
 
     img = cv2.imread(image_path, 0)
+    logger.info(f"Image shape: {img.shape}")
     template = cv2.imread(template_path, 0)
     w, h = template.shape[::-1]
-
+    logger.info(f"Template initial shape: {template.shape}")
     # List to store the results
     results = []
 
     # Initial scale range
-    scales = np.linspace(0.5, 1.5, 20)
-    best_match_quality, best_match_coordinates, best_scale = get_best_match(img, template, scales, results)
+    scales = np.linspace(0.3, 1.5, 20)
+    best_match_quality, best_match_coordinates, best_scale = get_best_match_to_template(img, template, scales, results)
 
     # Continue with smaller scales if needed
-    start_scale = best_scale - 0.05
-    end_scale = 0.2
+    start_scale, end_scale = best_scale - 0.05, 0.2
     smaller_scales = np.linspace(start_scale, end_scale, 20)
-    best_match_quality, best_match_coordinates, best_scale = get_best_match(img, template, smaller_scales, results)
+    best_match_quality, best_match_coordinates, best_scale = get_best_match_to_template(img, template, smaller_scales, results)
 
     # Draw a rectangle around the matched region
     img_rgb = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
@@ -59,13 +66,18 @@ def multi_scale_template_matching(image_path, template_path, print_img=False):
     # Save the result image
     output_image_path = 'match_result_updated.png'
     cv2.imwrite(output_image_path, img_rgb)
-    if print_img:
+    if plot_img:
+        fig, ax = plt.subplots(figsize=(16, 12))
         # Display the result
-        plt.imshow(img_rgb)
-        plt.title(f'Scale: {best_scale} - Quality: {best_match_quality}')
+        ax.imshow(img_rgb)
+        template_name = Path(template_path).name
+        image_name = Path(image_path).name
+        ax.set_title(f'Template matched:{template_name}\nScale: {best_scale} - Quality: {best_match_quality}')
+        folder = "/Users/amielsitruk/work/terra_cognita/customers/pop_valet/ai_documents/data/performances_data/invalid_data/arval_classic_restitution_images/tmp/detected_templates/"
+        fig.savefig(folder + template_name + "_" + image_name)
         plt.show()
 
-    return output_image_path, best_match_quality, best_scale,best_match_coordinates
+    return output_image_path, best_match_quality, best_scale, best_match_coordinates
 
 
 def remove_rectangle_from_image(image_path,output_path,top_left, bottom_right,print_img=False):
@@ -98,7 +110,7 @@ def remove_rectangle_from_image(image_path,output_path,top_left, bottom_right,pr
 
 
 
-def multi_scale_multi_results_temp_matching(image_path, temp_path,output_path, number_of_iteration,print_img=False,print2=False):
+def multi_scale_multi_results_temp_matching(image_path, temp_path,output_path, number_of_iteration,print_img=False, print2=False):
     list_coord = []
     image_temp = image_path
     for i in range(number_of_iteration):
@@ -165,7 +177,7 @@ def draw_contour_rectangles_on_image(image_path, rectangles):
 
 
 # Function to crop and save images
-def crop_and_save_image(image, blocks, output_dir, input_filename):
+def crop_blocks_in_image(image, blocks, output_dir, input_filename):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -173,7 +185,8 @@ def crop_and_save_image(image, blocks, output_dir, input_filename):
     for i, block in enumerate(blocks):
         (x1, y1), (x2, y2) = block
         cropped_image = image[y1:y2, x1:x2]
-        output_filename = f"{base_filename}_{i}{file_extension}"
+        output_filename = f"{base_filename}_{i}.jpeg"
+        logger.info(f"Saving cropped image to {output_dir}/{output_filename}")
         cv2.imwrite(os.path.join(output_dir, output_filename), cropped_image)
 
 
@@ -215,71 +228,76 @@ def crop_image_around_reference2(image_path, reference_rect):
 
 
 
-def arval_classic_create_bloc2(file_path, template_path_top_bloc2, template_path_top_bloc3, file_dimensions) :
-    #top bloc2 coordinate
-    output_image_path, match_quality, scale, list_coord_top_bloc2 = multi_scale_template_matching(file_path,
-                                                                                                  template_path_top_bloc2,
-                                                                                                  print_img=False)
-    
-    #bottom bloc2 coordinate
-    output_image_path, match_quality, scale, list_coord_top_bloc3 = multi_scale_template_matching(file_path,
-                                                                                                  template_path_top_bloc3,
-                                                                                                  print_img=False)
+def find_block2_infos(file_path, template_path_top_block2, template_path_top_block3, file_dimensions) :
+    #top block2 coordinate
+    logger.info(f"Getting block 2 bottom following template: {template_path_top_block2.split('/')[-1]}")
+    output_image_path, match_quality, scale, list_coord_top_block2 = multi_scale_template_matching(file_path,
+                                                                                                   template_path_top_block2,
+                                                                                                   plot_img=PLOT_MATCHED_BLOCKS)
+
+    #bottom block2 coordinate
+    logger.info(f"Getting block 3 top following template: {template_path_top_block3.split('/')[-1]}...")
+    output_image_path, match_quality, scale, list_coord_top_block3 = multi_scale_template_matching(file_path,
+                                                                                                   template_path_top_block3,
+                                                                                                   plot_img=PLOT_MATCHED_BLOCKS)
     
     #Creating bloc 2
-    bloc2 = create_block2_from_ref_rectangles(list_coord_top_bloc2, list_coord_top_bloc3, file_dimensions[1])
+    block2 = create_block2_from_ref_rectangles(list_coord_top_block2, list_coord_top_block3, file_dimensions[1])
 
-    return bloc2
+    return block2
 
 
-def arval_classic_create_bloc4(file_path, template_path_bot_bloc3, template_path_bot_bloc4, file_dimensions) :
-    #bottom bloc3 coordinate
-    output_image_path, match_quality, scale,list_coord_bot_bloc3 =multi_scale_template_matching(file_path, template_path_bot_bloc3, print_img= False)
+def find_block4_infos(file_path, template_path_bot_block3, template_path_bot_block4, file_dimensions) :
+    #bottom block3 coordinate
+    logger.info(f"Getting block 3 bottom following templates {template_path_bot_block3.split('/')[-1]}")
+    output_image_path, match_quality, scale, list_coord_bot_block3 = multi_scale_template_matching(file_path, template_path_bot_block3, plot_img=PLOT_MATCHED_BLOCKS)
     
-    #bottom bloc4 coordinate
-    output_image_path, match_quality, scale,list_coord_bot_bloc4 =multi_scale_template_matching(file_path, template_path_bot_bloc4, print_img= False)
+    #bottom block4 coordinate
+    logger.info(f"Getting block 4 bottom following templates {template_path_bot_block4.split('/')[-1]}")
+    output_image_path, match_quality, scale, list_coord_bot_block4 = multi_scale_template_matching(file_path, template_path_bot_block4, plot_img=PLOT_MATCHED_BLOCKS)
     
     #Creating bloc 4
-    bloc4 = create_block4_from_ref_rectangles(list_coord_bot_bloc3, list_coord_bot_bloc4, file_dimensions[1])
+    block4 = create_block4_from_ref_rectangles(list_coord_bot_block3, list_coord_bot_block4, file_dimensions[1])
 
-    return bloc4
+    return block4
 
-#bloc4 = arval_classic_create_bloc4(file, template_path_bot_bloc3,template_path_top_bloc3,file_dimensions) 
+#block4 = arval_classic_create_block4(file, template_path_bot_block3,template_path_top_block3,file_dimensions) 
 
 
 
 #Dividing bloc 2:
-def arval_classic_divide_and_crop_bloc2(file_path_bloc2, output_fold, file_name, template_path_signature_bloc2) :
+def arval_classic_divide_and_crop_block2(file_path_block2, output_fold, file_name, template_path_signature_block2) :
         
-        output_image_path, match_quality, scale, list_coord_signa_bloc2 = multi_scale_template_matching(file_path_bloc2,
-                                                                                                        template_path_signature_bloc2,
-                                                                                                        print_img=False)
+        output_image_path, match_quality, scale, list_coord_signa_block2 = multi_scale_template_matching(file_path_block2,
+                                                                                                         template_path_signature_block2,
+                                                                                                         plot_img=PLOT_MATCHED_BLOCKS)
 
-        bloc_2_info, bloc_2_sign = crop_image_around_reference(file_path_bloc2, list_coord_signa_bloc2)
+        block_2_info, block_2_sign = crop_image_around_reference(file_path_block2, list_coord_signa_block2)
         
         # If you want to save the cropped images
-        bloc_2_info_path = str(os.path.join(output_fold, f"{os.path.splitext(file_name)[0]}_bloc_2_info.jpeg"))
-        bloc_2_sign_path = str(os.path.join(output_fold, f"{os.path.splitext(file_name)[0]}_bloc_2_sign.jpeg"))
+        block_2_info_path = str(os.path.join(output_fold, f"{os.path.splitext(file_name)[0]}_block_2_info.jpeg"))
+        block_2_sign_path = str(os.path.join(output_fold, f"{os.path.splitext(file_name)[0]}_block_2_sign.jpeg"))
         
-        cv2.imwrite(bloc_2_info_path, bloc_2_info)
-        cv2.imwrite(bloc_2_sign_path, bloc_2_sign)
-        return bloc_2_info_path, bloc_2_sign_path
+        cv2.imwrite(block_2_info_path, block_2_info)
+        cv2.imwrite(block_2_sign_path, block_2_sign)
+        return block_2_info_path, block_2_sign_path
 
 
 
-def arval_classic_divide_and_crop_bloc4(file_path_bloc4,output_fold,file_name,template_path_signature_bloc4) :
+def arval_classic_divide_and_crop_block4(file_path_block4,output_fold,file_name,template_path_signature_block4) :
         
-        output_image_path, match_quality, scale, list_coord_signa_bloc4 = multi_scale_template_matching(file_path_bloc4, template_path_signature_bloc4, print_img= False)
+        output_image_path, match_quality, scale, list_coord_signa_block4 = multi_scale_template_matching(file_path_block4,
+                                                                                                         template_path_signature_block4, plot_img=PLOT_MATCHED_BLOCKS)
 
-        bloc_4_info, bloc_4_sign = crop_image_around_reference2(file_path_bloc4, list_coord_signa_bloc4)
+        block_4_info, block_4_sign = crop_image_around_reference2(file_path_block4, list_coord_signa_block4)
         
         # If you want to save the cropped images
-        bloc_4_info_path = str(os.path.join(output_fold, f"{os.path.splitext(file_name)[0]}_{'bloc_4_info'}.jpeg"))
-        bloc_4_sign_path = str(os.path.join(output_fold, f"{os.path.splitext(file_name)[0]}_{'bloc_4_sign'}.jpeg"))
+        block_4_info_path = str(os.path.join(output_fold, f"{os.path.splitext(file_name)[0]}_{'block_4_info'}.jpeg"))
+        block_4_sign_path = str(os.path.join(output_fold, f"{os.path.splitext(file_name)[0]}_{'block_4_sign'}.jpeg"))
         
-        cv2.imwrite(bloc_4_info_path, bloc_4_info)
-        cv2.imwrite(bloc_4_sign_path, bloc_4_sign)
+        cv2.imwrite(block_4_info_path, block_4_info)
+        cv2.imwrite(block_4_sign_path, block_4_sign)
     
-        return bloc_4_info_path,bloc_4_sign_path
+        return block_4_info_path,block_4_sign_path
 
 

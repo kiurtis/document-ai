@@ -13,8 +13,8 @@ from pipeline import get_processed_boxes_and_words, postprocess_boxes_and_words,
 from plotting import plot_boxes_with_text
 from document_parsing import find_next_right_word
 
-FOLDER_GROUND_TRUTHS = Path('data/performances_data/fleet_services_jsons')
-FOLDER_IMAGES = Path('data/performances_data/fleet_services_images')
+FOLDER_GROUND_TRUTHS = Path('data/performances_data/valid_data/fleet_services_jsons')
+FOLDER_IMAGES = Path('data/performances_data/valid_data/fleet_services_images')
 RESULT_TEMPLATE = get_result_template(
     folder_ground_truths=FOLDER_GROUND_TRUTHS,
 )

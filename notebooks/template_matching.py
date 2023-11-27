@@ -32,7 +32,7 @@ import os
 from pathlib import Path
 import matplotlib.image as mpimg
 
-from template_matching_function import get_image_dimensions,arval_classic_create_bloc2,arval_classic_create_bloc4,draw_contour_rectangles_on_image,crop_and_save_image,arval_classic_divide_and_crop_bloc2,arval_classic_divide_and_crop_bloc4
+from template_matching_function import get_image_dimensions,find_block2_infos,find_block4_infos,draw_contour_rectangles_on_image,crop_blocks_in_image,arval_classic_divide_and_crop_bloc2,arval_classic_divide_and_crop_bloc4
 
 
 # +
@@ -69,8 +69,8 @@ for file_name in image_files:
         try:
             # Getting bloc 2 and 4
             new_dimensions = get_image_dimensions(file_path)
-            bloc2 = arval_classic_create_bloc2(file_path, template_path_top_bloc2, template_path_top_bloc3, new_dimensions)
-            bloc4 = arval_classic_create_bloc4(file_path, template_path_bot_bloc3, template_path_bot_bloc4, new_dimensions)
+            bloc2 = find_block2_infos(file_path, template_path_top_bloc2, template_path_top_bloc3, new_dimensions)
+            bloc4 = find_block4_infos(file_path, template_path_bot_bloc3, template_path_bot_bloc4, new_dimensions)
             draw_contour_rectangles_on_image(file_path, [bloc2, bloc4])
             blocs = [bloc2, bloc4]
             print(blocs)
@@ -83,7 +83,7 @@ for file_name in image_files:
         image = cv2.imread(file_path)
         try:
             #cropping the image in bloc
-            crop_and_save_image(image, blocs, output_fold, file_name)
+            crop_blocks_in_image(image, blocs, output_fold, file_name)
             cropped_image_paths = [os.path.join(output_fold, f"{os.path.splitext(file_name)[0]}_{i}.jpeg") for i in range(len(blocs))]
         except Exception as e:
             print('-----------------')
@@ -218,8 +218,8 @@ for file_name in image_files:
         try:
             # Getting bloc 2 and 4
             new_dimensions = get_image_dimensions(file_path)
-            bloc2 = arval_classic_create_bloc2(file_path, template_path_top_bloc2, template_path_top_bloc3, new_dimensions)
-            bloc4 = arval_classic_create_bloc4(file_path, template_path_bot_bloc3, template_path_bot_bloc4, new_dimensions)
+            bloc2 = find_block2_infos(file_path, template_path_top_bloc2, template_path_top_bloc3, new_dimensions)
+            bloc4 = find_block4_infos(file_path, template_path_bot_bloc3, template_path_bot_bloc4, new_dimensions)
             draw_contour_rectangles_on_image(file_path, [bloc2, bloc4])
             blocs = [bloc2, bloc4]
             print(blocs)
@@ -232,7 +232,7 @@ for file_name in image_files:
         image = cv2.imread(file_path)
         try:
             #cropping the image in bloc
-            crop_and_save_image(image, blocs, output_fold, file_name)
+            crop_blocks_in_image(image, blocs, output_fold, file_name)
             cropped_image_paths = [os.path.join(output_fold, f"{os.path.splitext(file_name)[0]}_{i}.jpeg") for i in range(len(blocs))]
         except Exception as e:
             print('-----------------')
@@ -530,8 +530,8 @@ for file_name in image_files:
         try:
             # Getting bloc 2 and 4
             new_dimensions = get_image_dimensions(file_path)
-            bloc2 = arval_classic_create_bloc2(file_path, template_path_top_bloc2, template_path_top_bloc3, new_dimensions)
-            bloc4 = arval_classic_create_bloc4(file_path, template_path_bot_bloc3, template_path_bot_bloc4, new_dimensions)
+            bloc2 = find_block2_infos(file_path, template_path_top_bloc2, template_path_top_bloc3, new_dimensions)
+            bloc4 = find_block4_infos(file_path, template_path_bot_bloc3, template_path_bot_bloc4, new_dimensions)
             draw_contour_rectangles_on_image(file_path, [bloc2, bloc4])
             blocs = [bloc2, bloc4]
             print(blocs)
@@ -544,7 +544,7 @@ for file_name in image_files:
         image = cv2.imread(file_path)
         try:
             #cropping the image in bloc
-            crop_and_save_image(image, blocs, output_fold, file_name)
+            crop_blocks_in_image(image, blocs, output_fold, file_name)
             cropped_image_paths = [os.path.join(output_fold, f"{os.path.splitext(file_name)[0]}_{i}.jpeg") for i in range(len(blocs))]
         except Exception as e:
             print('-----------------')
