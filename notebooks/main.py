@@ -28,178 +28,197 @@ import re
 import json
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
-
+from loguru import logger
 # %load_ext autoreload
 # %autoreload 2
 
 #Importing functions
-from template_matching_function import get_image_dimensions,arval_classic_create_bloc2,arval_classic_create_bloc4,draw_contour_rectangles_on_image,crop_and_save_image,arval_classic_divide_and_crop_bloc2,arval_classic_divide_and_crop_bloc4
+from template_matching_function import get_image_dimensions, find_block2_infos, find_block4_infos,\
+    draw_contour_rectangles_on_image,crop_blocks_in_image, arval_classic_divide_and_crop_block2, arval_classic_divide_and_crop_block4
 from pipeline import get_processed_boxes_and_words,postprocess_boxes_and_words_arval_classic_restitution
 from document_parsing import find_next_right_word
+from image_processing import get_image_orientation, rotate_image
 from performance_estimation import has_found_box
 from plotting import plot_boxes_with_text
 from Levenshtein import distance as l_distance
 
-from utils import get_result_template
+from utils import get_result_template, clean_listdir
 from pathlib import Path
 
-
-def verify_number_plate_format(s):
-    """
-    Verify if a string follows a the specific French plate format number.
-    """
-    pattern = r'^[a-zA-Z]{2}-\d{3}-[a-zA-Z]{2}$'
-    return bool(re.match(pattern, s))
-
-class DocumentAnalyzer:
-    def __init__(self, document_name, path_to_document,hyperparameters):
+class ArvalClassicDocumentAnalyzer:
+    def __init__(self, document_name, path_to_document, hyperparameters):
         self.document_name = document_name
         self.path_to_document = path_to_document
         self.results = {} #To be filled with results of analysis
         self.folder_path = os.path.dirname(self.path_to_document) #Folder where the file is 
-        self.temps_folder_path = os.path.join(self.folder_path, "temps") #Folder where we'll store the blocs
+        self.tmp_folder_path = os.path.join(self.folder_path, "tmp") #Folder where we'll store the blocks
+        self.hyperparameters = hyperparameters
 
-        if not os.path.exists(self.temps_folder_path):
-            os.makedirs(self.temps_folder_path)
+        # Templates used to process the template matching
+        self.template_path_top_block2 = 'data/performances_data/template/arval_classic_restitution/template_le_vehicule.png'
+        #self.template_path_top_block2 = 'data/performances_data/template/arval_classic_restitution/test_template_top_block2.png'
+        self.template_path_top_bloc3 = 'data/performances_data/template/arval_classic_restitution/template_descriptif.png'
+        self.template_path_bot_bloc3 = 'data/performances_data/template/arval_classic_restitution/template_end_block3.png'
+        self.template_path_bot_block4 = 'data/performances_data/template/arval_classic_restitution/template_barcode.png'
+
+        # Templates to subdivise the bloc:
+        self.template_path_signature_block2 = 'data/performances_data/template/arval_classic_restitution/template_block_2_garage.png'
+        self.template_path_signature_block4 = 'data/performances_data/template/arval_classic_restitution/template_block_4_long.png'
+
+        if not os.path.exists(self.tmp_folder_path):
+            os.makedirs(self.tmp_folder_path)
     
-    def test_bloc_existence(self):
+    def test_block_existence(self):
         """
-        Test if the blocs already in self.temps_folder_path.
+        Test if the blocks already in self.tmp_folder_path.
         """
-        bloc_doc = []
-        file_name = ['bloc_2_info','bloc_2_sign','bloc_4_info','bloc_4_sign']
+        block_doc = []
+        file_name = ['block_2_info', 'block_2_sign', 'block_4_info', 'block_4_sign']
         missing_files = []
 
         for i in file_name:
-            cropped_image_path = os.path.join(self.temps_folder_path, f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg")
+            cropped_image_path = os.path.join(self.tmp_folder_path,
+                                              f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg")
 
             if os.path.exists(cropped_image_path):
-                bloc_doc.append(cropped_image_path)  
+                block_doc.append(cropped_image_path)  
             else:
                 missing_files.append(cropped_image_path)  
 
-        if len(missing_files) == 0 :
+        if len(missing_files) == 0:
             return True
         else:
             return False
         
     def read_block_path(self):
         """
-        Create the blocs path attribute
+        Create the blocks path attribute
         """
-        file_name = ['bloc_2_info','bloc_2_sign','bloc_4_info','bloc_4_sign']
+        file_name = ['block_2_info', 'block_2_sign', 'block_4_info', 'block_4_sign']
     
         for file_name in file_name:
-            path = os.path.join(self.temps_folder_path, f"{os.path.splitext(self.document_name)[0]}_{file_name}.jpeg")
+            path = os.path.join(self.tmp_folder_path, f"{os.path.splitext(self.document_name)[0]}_{file_name}.jpeg")
             setattr(self, f"{file_name}_path", path)      
     
-    def crop_blocks_and_save_them(self):
+    def apply_block_cropping(self):
         """
-        Divide the arval_classic_restitution type document in 4 parts and save them in self.temps_folder_path.
+        Divide the arval_classic_restitution type document in 4 parts and save them in self.tmp_folder_path.
         """
-        
-        #Template used to process the template matching
-        template_path_top_bloc2 = 'data/performances_data/arval_classic_restitution_images/template/template_le_vehicule.png'
-        template_path_top_bloc3 = 'data/performances_data/arval_classic_restitution_images/template/template_descriptif.png'
-        template_path_bot_bloc3 = 'data/performances_data/arval_classic_restitution_images/template/template_end_block3.png'
-        template_path_bot_bloc4 = 'data/performances_data/arval_classic_restitution_images/template/template_barcode.png'
 
-        #template to subdivise the bloc:
-        template_path_signature_bloc2 = 'data/performances_data/arval_classic_restitution_images/template/template_bloc_2_garage.png'
-        template_path_signature_bloc4 = 'data/performances_data/arval_classic_restitution_images/template/template_bloc_4_long.png'
-               
         try:
-            # Getting bloc 2 and 4
-            new_dimensions = get_image_dimensions(self.path_to_document)
-            bloc2 = arval_classic_create_bloc2(str(self.path_to_document), template_path_top_bloc2, template_path_top_bloc3, new_dimensions)
-            bloc4 = arval_classic_create_bloc4(str(self.path_to_document), template_path_bot_bloc3, template_path_bot_bloc4, new_dimensions)
-            #draw_contour_rectangles_on_image(self.path_to_document, [bloc2, bloc4])
-            blocs = [bloc2, bloc4]
-            #print(blocs)
+            # Getting block 2 and 4
+            file_dimensions = get_image_dimensions(self.path_to_document)
+
+            logger.info(f"File dimensions: {file_dimensions}")
+            logger.info("Getting blocks 2...")
+            block2 = find_block2_infos(str(self.path_to_document),
+                                       self.template_path_top_block2,
+                                       self.template_path_top_bloc3,
+                                       file_dimensions)
+
+            logger.info("Getting blocks 4...")
+            block4 = find_block4_infos(str(self.path_to_document),
+                                       self.template_path_bot_bloc3,
+                                       self.template_path_bot_block4,
+                                       file_dimensions)
+
+            #draw_contour_rectangles_on_image(self.path_to_document, [block2, block4])
+            blocks = [block2, block4]
+
         except Exception as e:
-            print('-----------------')
-            print("An error occurred tyring to get bloc 2 and 4 of ", self.document_name ," :", e)
-            print('-----------------')
-                
+            logger.error(f"An error occurred trying to get blocks 2 and 4 of {self.document_name}:{e}")
+
         try:
-            #cropping and saving the image in bloc in the temp folder
+            # Cropping and saving the blocks images in the tmp folder
             image = cv2.imread(self.path_to_document)
-            crop_and_save_image(image, blocs, self.temps_folder_path, self.document_name)
-            cropped_image_paths = [os.path.join(self.temps_folder_path, f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg") for i in range(len(blocs))]
+            logger.info("Cropping blocks...")
+
+            crop_blocks_in_image(image, blocks,
+                                 self.tmp_folder_path,
+                                 self.document_name)
+            cropped_image_paths = [os.path.join(self.tmp_folder_path,
+                                                f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg")
+                                   for i in range(len(blocks))]
             print(cropped_image_paths)
         except Exception as e:
-            print('-----------------')
-            print("An error occurred tyring to crop the image ", self.document_name ," :", e)
-            print('-----------------')
+            logger.error(f"An error occurred trying to crop the image {self.document_name}:{e}")
 
-        #Dividing and cropping bloc 2:
+        # Dividing and cropping block 2 in sub-blocks:
         try:
-            file_path_bloc2 = str(cropped_image_paths[0])
-            self.bloc_2_info_path,self.bloc_2_sign_path = arval_classic_divide_and_crop_bloc2(file_path_bloc2,self.temps_folder_path,self.document_name,template_path_signature_bloc2)
+            logger.info("Dividing block 2...")
+            file_path_block2 = str(cropped_image_paths[0])
+            self.block_2_info_path, self.block_2_sign_path = arval_classic_divide_and_crop_block2(file_path_block2,
+                                                                                                 self.tmp_folder_path,
+                                                                                                 self.document_name,
+                                                                                                 self.template_path_signature_block2
+                                                                                                 )
 
         except Exception as e:
-            print('-----------------')
-            print("An error occurred tyring to divide bloc 2 in two", self.document_name ," :", e)
-            print('-----------------')
+            logger.error(f"An error occurred trying to divide block 2 in two {self.document_name}:{e}")
         
-        #Dividing and cropping bloc 4:
+        # Dividing and cropping block 4 in sub-blocks:
         try:
-            file_path_bloc4 = str(cropped_image_paths[1])
-            self.bloc_4_info_path,self.bloc_4_sign_path = arval_classic_divide_and_crop_bloc4(file_path_bloc4,self.temps_folder_path,self.document_name,template_path_signature_bloc4)
-
+            logger.info("Dividing block 4...")
+            file_path_block4 = str(cropped_image_paths[1])
+            self.block_4_info_path, self.block_4_sign_path = arval_classic_divide_and_crop_block4(file_path_block4,
+                                                                                                self.tmp_folder_path,
+                                                                                                self.document_name,
+                                                                                                self.template_path_signature_block4
+                                                                                                )
         except Exception as e:
-            print('-----------------')
-            print("An error occurred tyring to divide bloc 4 in two", self.document_name ," :", e)
-            print('-----------------')
-              
+            logger.error(f"An error occurred trying to divide block 4 in two {self.document_name}:{e}")
+
     def get_blocks(self):
         """
-        Get the blocs: Create them if they don't exist or just find them if they're already in self.temps_folder_path
+        Get the blocks: Create them if they don't exist or just retrieve them if they're already in self.tmp_folder_path
         """
-        if self.test_bloc_existence() == True:
+        if self.test_block_existence():
             self.read_block_path()
         else:
-            self.crop_blocks_and_save_them() 
+            self.apply_block_cropping()
 
-    def print_blocks(self):
-        for i in [self.bloc_2_info_path,self.bloc_2_sign_path,self.bloc_4_info_path,self.bloc_4_sign_path]:
-            image_path = i  # Replace with the path to your image
+    def plot_blocks(self):
+        for image_path in [self.block_2_info_path, self.block_2_sign_path,
+                           self.block_4_info_path, self.block_4_sign_path]:
             img = mpimg.imread(image_path)
             plt.imshow(img)
             plt.axis('off')  # Turn off axis numbers
             plt.show()
 
     def get_result_template(self):
-        folder_ground_truths = Path('data/performances_data/arval_classic_restitution_json/')
+        """
+        Get the template of the result json file, divided by blocks and including all the keywords.
+        :return:
+        """
+        folder_ground_truths = Path('data/performances_data/valid_data/arval_classic_restitution_json/')
         self.template = get_result_template(folder_ground_truths)
         
-    def analyze_block2_text(self,verbose=False,plot_boxes=False):
+    def analyze_block2_text(self, verbose=False, plot_boxes=False):
 
         self.result_json_block_2 = {}
         
-        converted_boxes = get_processed_boxes_and_words(img_path=self.bloc_2_info_path,
+        converted_boxes = get_processed_boxes_and_words(img_path=self.block_2_info_path,
                                                         block='block_2',
-                                                        det_arch=hyperparameters['det_arch'],
-                                                        reco_arch=hyperparameters['reco_arch'],
-                                                        pretrained=hyperparameters['pretrained'],
+                                                        det_arch=self.hyperparameters['det_arch'],
+                                                        reco_arch=self.hyperparameters['reco_arch'],
+                                                        pretrained=self.hyperparameters['pretrained'],
                                                         verbose=verbose)
-        
-        
+
         converted_boxes = postprocess_boxes_and_words_arval_classic_restitution(converted_boxes,
                                                           block='block_2',
                                                           verbose=verbose,
                                                           safe=True)
         if plot_boxes:
-            new_dimensions = get_image_dimensions(self.bloc_2_info_path)
-            plot_boxes_with_text(converted_boxes,new_dimensions)
+            file_dimensions = get_image_dimensions(self.block_2_info_path)
+            plot_boxes_with_text(converted_boxes, file_dimensions)
         
         for key_word in self.template['block_2']:
                 if verbose:
-                    print(f'Running {key_word}')
+                    logger.info(f'Running {key_word}')
                 self.result_json_block_2[key_word] = find_next_right_word(converted_boxes, key_word,
-                                                                 distance_margin=hyperparameters['distance_margin'],
-                                                                 max_distance=hyperparameters['max_distance'],
-                                                                 minimum_overlap=hyperparameters['minimum_overlap'],
+                                                                 distance_margin=self.hyperparameters['distance_margin'],
+                                                                 max_distance=self.hyperparameters['max_distance'],
+                                                                 minimum_overlap=self.hyperparameters['minimum_overlap'],
                                                                  verbose=verbose)
 
                 if isinstance(self.result_json_block_2[key_word], dict):
@@ -211,11 +230,11 @@ class DocumentAnalyzer:
 
         self.result_json_block_4 = {}
         
-        converted_boxes = get_processed_boxes_and_words(img_path=self.bloc_4_info_path,
+        converted_boxes = get_processed_boxes_and_words(img_path=self.block_4_info_path,
                                                         block='block_4',
-                                                        det_arch=hyperparameters['det_arch'],
-                                                        reco_arch=hyperparameters['reco_arch'],
-                                                        pretrained=hyperparameters['pretrained'],
+                                                        det_arch=self.hyperparameters['det_arch'],
+                                                        reco_arch=self.hyperparameters['reco_arch'],
+                                                        pretrained=self.hyperparameters['pretrained'],
                                                         verbose=verbose)
 
 
@@ -225,17 +244,17 @@ class DocumentAnalyzer:
                                                           verbose=verbose,
                                                           safe=True)
         if plot_boxes:
-            new_dimensions = get_image_dimensions(self.bloc_4_info_path)
-            plot_boxes_with_text(converted_boxes,new_dimensions)
+            file_dimensions = get_image_dimensions(self.block_4_info_path)
+            plot_boxes_with_text(converted_boxes, file_dimensions)
         
                     
         for key_word in self.template['block_4']:
                 if verbose:
-                    print(f'Running {key_word}')
+                    logger.info(f'Running {key_word}')
                 self.result_json_block_4[key_word] = find_next_right_word(converted_boxes, key_word,
-                                                                 distance_margin=hyperparameters['distance_margin'],
-                                                                 max_distance=hyperparameters['max_distance'],
-                                                                 minimum_overlap=hyperparameters['minimum_overlap'],
+                                                                 distance_margin=self.hyperparameters['distance_margin'],
+                                                                 max_distance=self.hyperparameters['max_distance'],
+                                                                 minimum_overlap=self.hyperparameters['minimum_overlap'],
                                                                  verbose=verbose)
             
                 
@@ -250,13 +269,31 @@ class DocumentAnalyzer:
     def analyze_block4_signature(self):
         raise NotImplementedError
 
+    def manage_orientation(self):
+        """
+        Check if the image is rotated and rotate it if needed.
+        """
+        try:
+            self.document_orientation = get_image_orientation(self.document_path)
+            if self.document_orientation != 'Horizontal':
+                logger.info(f'Rotating {self.document_name}...')
+                self.document_path = rotate_image(self.document_path)
+        except Exception as e:
+            logger.error(f'An error occurred trying to rotate {self.document_name}:{e}')
 
-        
+
+
     def analyze(self):
+        logger.info(f'Analyzing {self.document_name}')
+        #self.manage_orientation()
+        logger.info(f'Getting blocks...')
         self.get_blocks()
+        logger.info(f'Getting result template...')
         self.get_result_template()
-        self.analyze_block2_text(verbose=False,plot_boxes=True)
-        self.analyze_block4_text(verbose=False,plot_boxes=True)
+        logger.info(f'Analyzing block 2...')
+        self.analyze_block2_text(verbose=False, plot_boxes=True)
+        logger.info(f'Analyzing block 4...')
+        self.analyze_block4_text(verbose=False, plot_boxes=True)
         #self.analyze_block2_signature()
         #self.analyze_block4_signature()
 
@@ -269,7 +306,7 @@ class DocumentAnalyzer:
 
 
 class ResultValidator:
-    def __init__(self, results):
+    def __init__(self, results, plate_number):
         #with open(result_json) as f:
          #   self.result = json.load(f)
         self.result = results 
@@ -280,7 +317,7 @@ class ResultValidator:
         self.number_plate_is_right = True
         self.block4_is_filled = True
         self.block4_is_filled_by_company = True
-
+        self.plate_number = plate_number
 
     def validate_signatures(self):
         raise NotImplementedError
@@ -295,16 +332,17 @@ class ResultValidator:
         self.number_plate_is_filled = self.result['block_2']['Immatriculé'] != "<EMPTY>"
 
     def validate_number_plate_is_right(self):
-        plate_number= self.result['block_2']['Immatriculé']
-        self.number_plate_is_right = verify_number_plate_format(plate_number)
+        detected_plate_number = self.result['block_2']['Immatriculé']
+        self.number_plate_is_right = l_distance(detected_plate_number, self.plate_number) < 3
         
-    def validate_block4_is_filled_by_company(self):
+    def validate_block4_is_filled_by_company(self, distance_margin=4):
         company_name = self.result['block_4']['Société']
-        self.block4_is_filled_by_company = company_name not in ["<EMPTY>", "<NOT_FOUND>"] and l_distance(company_name, "Pop Valet") > 4
+        self.block4_is_filled_by_company = company_name not in ["<EMPTY>", "<NOT_FOUND>"] \
+                                           and l_distance(company_name, "Pop Valet") > distance_margin
 
 
     def validate_block4_is_filled(self):
-        #TO DO: Check how we want to define this function
+        #TODO: Check how we want to define this function
         self.block4_is_filled = any(
             value not in ["<EMPTY>", "<NOT_FOUND>"] for value in self.result['block_4'].values()
             )
@@ -318,19 +356,19 @@ class ResultValidator:
 
         # Check each variable and add its name to the list if it's False
         #if not self.signature_is_ok:
-        #   self.refused_motiv.append('signature_is_ok')
+        #   self.refused_causes.append('signature_is_ok')
         #if not self.stamp_is_ok:
-        #    self.refused_motiv.append('stamp_is_ok')
+        #    self.refused_causes.append('stamp_is_ok')
         if not self.mileage_is_ok:
-            self.refused_causes.append('mileage_is_ok')
+            self.refused_causes.append('mileage_is_not_ok')
         if not self.number_plate_is_filled:
-            self.refused_causes.append('number_plate_is_filled')
+            self.refused_causes.append('number_plate_is_not_filled')
         if not self.number_plate_is_right:
-            self.refused_causes.append('number_plate_is_right')
+            self.refused_causes.append('number_plate_is_not_right')
         if not self.block4_is_filled:
-           self.refused_causes.append('block4_is_filled')
+           self.refused_causes.append('block4_is_not_filled')
         if not self.block4_is_filled_by_company:
-           self.refused_causes.append('block4_is_filled_by_company')
+           self.refused_causes.append('block4_is_not_filled_by_company')
 
         
 
@@ -347,88 +385,85 @@ class ResultValidator:
         self.validated = self.signature_is_ok and self.stamp_is_ok and self.mileage_is_ok and self.number_plate_is_filled and self.number_plate_is_right and self.block4_is_filled and self.block4_is_filled_by_company
         return self.validated
 
-# +
-documents = {'EK-744-NX_EK-744-NX_procès_verbal_de_restitution_définitive_Arval_exemplaire_PUBLIC_LLD_p1.jpeg': {'path':'data/performances_data/arval_classic_restitution_images/EK-744-NX_EK-744-NX_procès_verbal_de_restitution_définitive_Arval_exemplaire_PUBLIC_LLD_p1.jpeg',
-                           'validated': False,
-                           'cause': 'block4_is_filled_by_company'},
-             'document2': {'path':'path/to/document2',
-                           'validated': False,
-                           'cause': 'block4_is_filled_by_company'}
-             }
+
+invalid_restitutions_infos = pd.read_csv('data/arval/links_to_dataset/invalid_restitutions.csv')
 
 #Getting all the documents path and name
+image_extensions = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.bmp']
 all_documents = {}
+for status in [#'valid',
+            'invalid'
+               ]:
+    image_directory = Path(f'data/performances_data/{status}_data/arval_classic_restitution_images/')
+    image_files = os.listdir(image_directory)
 
-image_directory = Path('data/performances_data/arval_classic_restitution_images/')
-image_files = os.listdir(image_directory)
-
-# Iterate over each image and perform the operations
-valid_image_extensions = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.bmp']
-
-# Iterate over each image and perform the operations
-for file_name in image_files:
-    # Check if the file is an image
-    if any(file_name.lower().endswith(ext) for ext in valid_image_extensions):
-        file_path = str(image_directory / file_name)
-        all_documents[file_name] = {}
-        all_documents[file_name]['path']=file_path
-        all_documents[file_name]['validated']=False
-        all_documents[file_name]['cause']='block4_is_filled_by_company'
-
+    # Iterate over each image and perform the operations
+    for file_name in image_files:
+        # Check if the file is an image
+        if any(file_name.lower().endswith(ext) for ext in image_extensions):
+            file_path = str(image_directory / file_name)
+            all_documents[file_name] = {}
+            all_documents[file_name]['path'] = file_path
+            all_documents[file_name]['validated'] = (status == 'valid')
+            if status == "valid":
+                all_documents[file_name]['cause'] = "-"
+            else:
+                all_documents[file_name]['cause'] = invalid_restitutions_infos.loc[invalid_restitutions_infos['plateNumber'] + '_' + invalid_restitutions_infos['filename'] == file_name, 'adminComment'].values[0]
+            all_documents[file_name]['plate_number'] = file_name.split('_')[0]
 
 # +
 #random hyper parameter: 
-hyperparameters = {'det_arch':"db_resnet50",
-        'reco_arch':"crnn_mobilenet_v3_large",
-        'pretrained':True ,
-        'distance_margin': 5, # find_next_right_word for words_similarity
-        'max_distance':  400, # find_next_right_word
-        'minimum_overlap': 10 # find_next_right_word for _has_overlap
-}
+hyperparameters = {'det_arch': "db_resnet50",
+                    'reco_arch': "crnn_mobilenet_v3_large",
+                    'pretrained': True,
+                    'distance_margin': 5,  # find_next_right_word for words_similarity
+                    'max_distance':  400,  # find_next_right_word
+                    'minimum_overlap': 10  # find_next_right_word for _has_overlap
+                   }
 
-full_result_analysis = pd.DataFrame(columns=['document_name', 'true_status', 'predicted_status', 'true_cause', 'predicted_cause'])
-for name, info in all_documents.items():
-    document_analyzer = DocumentAnalyzer(name, info['path'],hyperparameters)
-    document_analyzer.analyze()
-    print(document_analyzer.results)
-    break
-    result_validator = ResultValidator(document_analyzer.results)
-    result_validator.validate()
-
-    full_result_analysis = pd.concat([full_result_analysis,
-        pd.DataFrame({
-        'document_name': [name],
-        'true_status': [info['validated']],
-        'predicted_status': [result_validator.validated],
-        'true_cause': [info['cause']],
-        'predicted_cause': [", ".join(result_validator.refused_causes)]
-        }, index=[0])
-        ])
-    document_analyzer.print_blocks()
-    #print(result_validator.validated)
-    break
-
-print(full_result_analysis)
-# -
-
-document_analyzer.bloc_2_info_path
-
-print(full_result_analysis)
 
 # +
-from doctr.io import DocumentFile
-from doctr.models import ocr_predictor
+# Analyze all documents and compare with the ground truth
+full_result_analysis = pd.DataFrame(columns=['document_name', 'true_status', 'predicted_status', 'true_cause', 'predicted_cause'])
+#for name, info in all_documents.items():
 
-model = ocr_predictor(pretrained=True)
-# PDF
-doc = DocumentFile.from_images(document_analyzer.bloc_2_info_path)
-# Analyze
-result = model(doc)
+files_to_test = ['ES-337-RE_PVR.jpeg', # Block 2 is badly detected
+                 'EZ-542-KH_pv reprise.jpg', # Block 2 is badly detected, block 4 is not detected
+                 'FB-568-VP_ARVAL PV.jpg',
+                 'FF-173-LL_PV restitution.jpg', # Blocks 2 and 4 are not detected
+                 'FF-404-LL_Pv de restitution.jpg', # Blocks 2 and 4 are not detected
+                 'FK-184-AJ_PV de restitution.png', # Block 2 badly detected and block 4 badly separated
+                 'FS-127-LS_PV ARVAL.jpg', # Blocks 2 and 4 are note detected
+                 'GB-587-GR_PV DE RESTITUTION GB-587-GR.jpg',
+                 'GJ-053-HN_PV Arval.jpg' # Blocks 2 and 4 are not detected
+                ]
 
+#files_to_test = clean_listdir(Path('data/performances_data/valid_data/arval_classic_restitution_images/'))
 
+#files_iterable = list(all_documents.items())[:30]
+#files_iterable = {file_to_test: all_documents[file_to_test]}.items()
+files_iterable = {file: all_documents[file] for file in files_to_test}.items()
+for name, info in files_iterable:
+    try:
+        document_analyzer = ArvalClassicDocumentAnalyzer(name, info['path'], hyperparameters)
+        document_analyzer.analyze()
+        document_analyzer.plot_blocks()
 
-# -
+        print(document_analyzer.results)
+        result_validator = ResultValidator(document_analyzer.results, plate_number=info['plate_number'])
+        result_validator.validate()
 
-result.show(doc)
+        full_result_analysis = pd.concat([full_result_analysis,
+            pd.DataFrame({
+            'document_name': [name],
+            'true_status': [info['validated']],
+            'predicted_status': [result_validator.validated],
+            'true_cause': [info['cause']],
+            'predicted_cause': [", ".join(result_validator.refused_causes)],
+            'details': [document_analyzer.results],
+            }, index=[0])
+            ])
+    except Exception as e:
+        logger.error(f"Error while analyzing {name}")
 
-
+full_result_analysis.to_csv('data/performances_data/full_result_analysis.csv', index=False)
