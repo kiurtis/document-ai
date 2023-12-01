@@ -28,13 +28,15 @@ import re
 import json
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
+import numpy as np
 from loguru import logger
 # %load_ext autoreload
 # %autoreload 2
 
 #Importing functions
-from template_matching_function import get_image_dimensions, find_block2_infos, find_block4_infos,\
-    draw_contour_rectangles_on_image,crop_blocks_in_image, arval_classic_divide_and_crop_block2, arval_classic_divide_and_crop_block4
+from template_matching_function import get_image_dimensions,\
+    draw_contour_rectangles_on_image,crop_blocks_in_image, arval_classic_divide_and_crop_block2, arval_classic_divide_and_crop_block4,\
+    find_top_and_bot_of_arval_classic_restitution,resize_arval_classic,get_bloc2_rectangle,get_bloc4_rectangle,draw_rectangles_and_save
 from pipeline import get_processed_boxes_and_words,postprocess_boxes_and_words_arval_classic_restitution
 from document_parsing import find_next_right_word
 from image_processing import get_image_orientation, rotate_image
@@ -55,11 +57,13 @@ class ArvalClassicDocumentAnalyzer:
         self.hyperparameters = hyperparameters
 
         # Templates used to process the template matching
-        self.template_path_top_block2 = 'data/performances_data/template/arval_classic_restitution/template_le_vehicule.png'
-        #self.template_path_top_block2 = 'data/performances_data/template/arval_classic_restitution/test_template_top_block2.png'
-        self.template_path_top_bloc3 = 'data/performances_data/template/arval_classic_restitution/template_descriptif.png'
-        self.template_path_bot_bloc3 = 'data/performances_data/template/arval_classic_restitution/template_end_block3.png'
+        self.template_path_top_block1 = 'data/performances_data/template/arval_classic_restitution/template_top_left.png'
         self.template_path_bot_block4 = 'data/performances_data/template/arval_classic_restitution/template_barcode.png'
+        self.template_path_top_block2 = 'data/performances_data/template/arval_classic_restitution/template_path_top_block2.png'
+        self.template_path_top_block3 = 'data/performances_data/template/arval_classic_restitution/template_descriptif.png'
+        self.template_path_top_block4 = 'data/performances_data/template/arval_classic_restitution/template_end_block3.png'
+
+
 
         # Templates to subdivise the bloc:
         self.template_path_signature_block2 = 'data/performances_data/template/arval_classic_restitution/template_block_2_garage.png'
@@ -107,22 +111,37 @@ class ArvalClassicDocumentAnalyzer:
 
         try:
             # Getting block 2 and 4
+
             file_dimensions = get_image_dimensions(self.path_to_document)
 
-            logger.info(f"File dimensions: {file_dimensions}")
+            rezise_im = resize_arval_classic(str(self.path_to_document))
+            # Temporary file:
+            output_temp_file = str(self.tmp_folder_path) +'/temps_' + self.document_name
+
+            print(output_temp_file)
+            # Resizing image:
+            copy_of_rezise_im = rezise_im.copy()
+
+            # Finding the bottom and the top of the document :
+            top_rect, bottom_rect = find_top_and_bot_of_arval_classic_restitution(copy_of_rezise_im, output_temp_file,
+                                                                                  self.template_path_top_block1,
+                                                                                  self.template_path_bot_block4,
+                                                                                  print_img=False)
+            copy_of_rezise_im = rezise_im.copy()
+
+            # Searching block2
             logger.info("Getting blocks 2...")
-            block2 = find_block2_infos(str(self.path_to_document),
-                                       self.template_path_top_block2,
-                                       self.template_path_top_bloc3,
-                                       file_dimensions)
-
+            block2 = get_bloc2_rectangle(copy_of_rezise_im, output_temp_file, top_rect, bottom_rect,
+                                        self.template_path_top_block2, self.template_path_top_block3, print_img=True)
             logger.info("Getting blocks 4...")
-            block4 = find_block4_infos(str(self.path_to_document),
-                                       self.template_path_bot_bloc3,
-                                       self.template_path_bot_block4,
-                                       file_dimensions)
+            copy_of_rezise_im = rezise_im.copy()
+            block4 = get_bloc4_rectangle(copy_of_rezise_im, output_temp_file, block2, bottom_rect,
+                                        self.template_path_top_block4, print_img=True)
 
-            #draw_contour_rectangles_on_image(self.path_to_document, [block2, block4])
+            copy_of_rezise_im = rezise_im.copy()
+            draw_rectangles_and_save(copy_of_rezise_im, [block2, block4], output_temp_file)
+
+            #draw_contour_rectangles_on_image(str(self.path_to_document), [block2, block4])
             blocks = [block2, block4]
 
         except Exception as e:
@@ -291,9 +310,9 @@ class ArvalClassicDocumentAnalyzer:
         logger.info(f'Getting result template...')
         self.get_result_template()
         logger.info(f'Analyzing block 2...')
-        self.analyze_block2_text(verbose=False, plot_boxes=True)
+        self.analyze_block2_text(verbose=False, plot_boxes=False)
         logger.info(f'Analyzing block 4...')
-        self.analyze_block4_text(verbose=False, plot_boxes=True)
+        self.analyze_block4_text(verbose=False, plot_boxes=False)
         #self.analyze_block2_signature()
         #self.analyze_block4_signature()
 
@@ -408,7 +427,8 @@ for status in [#'valid',
             if status == "valid":
                 all_documents[file_name]['cause'] = "-"
             else:
-                all_documents[file_name]['cause'] = invalid_restitutions_infos.loc[invalid_restitutions_infos['plateNumber'] + '_' + invalid_restitutions_infos['filename'] == file_name, 'adminComment'].values[0]
+                all_documents[file_name]['cause'] = invalid_restitutions_infos.loc[invalid_restitutions_infos['plateNumber'].apply(lambda x: x in file_name) & invalid_restitutions_infos['filename'].apply(lambda x: os.path.splitext(x.replace(' ', '_'))[0] in file_name)].values[0]
+
             all_documents[file_name]['plate_number'] = file_name.split('_')[0]
 
 # +
@@ -428,26 +448,24 @@ full_result_analysis = pd.DataFrame(columns=['document_name', 'true_status', 'pr
 #for name, info in all_documents.items():
 
 files_to_test = ['ES-337-RE_PVR.jpeg', # Block 2 is badly detected
-                 'EZ-542-KH_pv reprise.jpg', # Block 2 is badly detected, block 4 is not detected
-                 'FB-568-VP_ARVAL PV.jpg',
-                 'FF-173-LL_PV restitution.jpg', # Blocks 2 and 4 are not detected
-                 'FF-404-LL_Pv de restitution.jpg', # Blocks 2 and 4 are not detected
-                 'FK-184-AJ_PV de restitution.png', # Block 2 badly detected and block 4 badly separated
-                 'FS-127-LS_PV ARVAL.jpg', # Blocks 2 and 4 are note detected
-                 'GB-587-GR_PV DE RESTITUTION GB-587-GR.jpg',
-                 'GJ-053-HN_PV Arval.jpg' # Blocks 2 and 4 are not detected
+                 'EZ-542-KH_pv_reprise.jpeg', # Block 2 is badly detected, block 4 is not detected
+                 'FB-568-VP_ARVAL_PV.jpeg',
+                 'FF-173-LL_PV_restitution.jpeg', # Blocks 2 and 4 are not detected
+                 'FF-404-LL_Pv_de_restitution.jpeg', # Blocks 2 and 4 are not detected
+                 'FK-184-AJ_PV_de_restitution.png', # Block 2 badly detected and block 4 badly separated
+                 'FS-127-LS_PV_ARVAL.jpeg', # Blocks 2 and 4 are note detected
+                 'GB-587-GR_PV_DE_RESTITUTION_GB-587-GR.jpeg',
+                 'GJ-053-HN_PV_Arval.jpeg' # Blocks 2 and 4 are not detected
                 ]
 
-#files_to_test = clean_listdir(Path('data/performances_data/valid_data/arval_classic_restitution_images/'))
 
-#files_iterable = list(all_documents.items())[:30]
-#files_iterable = {file_to_test: all_documents[file_to_test]}.items()
 files_iterable = {file: all_documents[file] for file in files_to_test}.items()
 for name, info in files_iterable:
+    break
     try:
         document_analyzer = ArvalClassicDocumentAnalyzer(name, info['path'], hyperparameters)
         document_analyzer.analyze()
-        document_analyzer.plot_blocks()
+        #document_analyzer.plot_blocks()
 
         print(document_analyzer.results)
         result_validator = ResultValidator(document_analyzer.results, plate_number=info['plate_number'])
@@ -466,4 +484,34 @@ for name, info in files_iterable:
     except Exception as e:
         logger.error(f"Error while analyzing {name}")
 
-full_result_analysis.to_csv('data/performances_data/full_result_analysis.csv', index=False)
+#full_result_analysis.to_csv('data/performances_data/full_result_analysis.csv', index=False)
+
+
+
+files_iterable = {file: all_documents[file] for file in files_to_test}.items()
+
+i =0
+#invalid Files tests croping doc
+for name, info in files_iterable:
+    break
+    document_analyzer = ArvalClassicDocumentAnalyzer(name, info['path'], hyperparameters)
+    document_analyzer.get_blocks()
+    document_analyzer.plot_blocks()
+    i += 1
+
+
+#Test on valid Files
+files_to_test = clean_listdir(Path('data/performances_data/valid_data/arval_classic_restitution_images/'))
+print(files_to_test)
+for name in files_to_test:
+    pathtofile = 'data/performances_data/valid_data/arval_classic_restitution_images/'+ name
+    document_analyzer = ArvalClassicDocumentAnalyzer(name, pathtofile, hyperparameters)
+    document_analyzer.get_blocks()
+    #document_analyzer.plot_blocks()
+
+    i += 1
+    break
+
+print(' ')
+print('Number of file analysed :',i)
+print(' ')
