@@ -8,8 +8,8 @@ import numpy as np
 from Levenshtein import distance
 from loguru import logger
 
-from utils import clean_listdir, read_json,get_result_template
-from pipeline import get_processed_boxes_and_words, postprocess_boxes_and_words,postprocess_boxes_and_words_unguided_bloc
+from utils import clean_listdir, read_json, get_result_template
+from pipeline import get_processed_boxes_and_words, postprocess_boxes_and_words, postprocess_boxes_and_words_unguided_bloc
 from plotting import plot_boxes_with_text
 from document_parsing import find_next_right_word
 
@@ -406,7 +406,8 @@ if __name__ == "__main__":
 
     # Define number of iterations and results file path
     NUM_ITERATIONS = 10
-    RESULTS_LIST_PATH = 'hyperparameters_optimization_results.json'
+    dt = datetime.now().strftime("%Y%m%d_%H%M%S")
+    RESULTS_LIST_PATH = f'hyperparameters_optimization_results_{dt}.json'
     DET_ARCHS = [
         "db_resnet34",
         "db_resnet50",
