@@ -40,8 +40,8 @@ from doctr.models import ocr_predictor
 
 from performance_estimation import compute_metrics_for_multiple_jsons, get_result_template, perform_hyperparameter_optimization, parse_random_search_results
 from document_parsing import get_words_coordinates, convert_to_cartesian, merge_word_with_following, find_next_right_word
-from plotting import plot_boxes_with_text, print_blocks_on_document, plot_centroids,plot_boxes,plot_boxes_and_lines
-from pre_ocr_division import find_max_spacing_non_crossing_lines,cut_and_save_image,subdivide_batch_of_image
+from plotting import plot_boxes_with_text, print_blocks_on_document, plot_centroids, plot_boxes,plot_boxes_and_lines
+from pre_ocr_division import find_max_spacing_non_crossing_lines, cut_and_save_image, subdivide_batch_of_image
 # -
 
 # ## I. Automatic division single image
@@ -52,8 +52,8 @@ from pipeline import get_processed_boxes_and_words_unguided_bloc
 img_path = "data/performances_data/fleet_services_images/DM-984-VT_Proces_verbal_de_restitution_page-0001/DM-984-VT_Proces verbal de restitution_page-0001.jpg"
 
 hyperparameters = {'det_arch':"db_resnet50",
-        'reco_arch':"crnn_mobilenet_v3_large",
-        'pretrained':True ,
+        'reco_arch': "crnn_mobilenet_v3_large",
+        'pretrained': True ,
         'distance_margin': 10, # find_next_right_word for words_similarity
         'max_distance':  100, # find_next_right_word
         'minimum_overlap': 20 # find_next_right_word for _has_overlap

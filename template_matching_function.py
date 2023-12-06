@@ -74,7 +74,7 @@ def multi_scale_template_matching(image_path, template_path,scales, plot_img=Fal
         image_name = Path(image_path).name
         print(image_name)
         ax.set_title(f'Template matched:{template_name}\nScale: {best_scale} - Quality: {best_match_quality}')
-        folder = "/Users/pipobimbo/Desktop/Caliente_work/OCR_test/document-ai_barth/document-ai/data/performances_data/invalid_data/arval_classic_restitution_images/tmp/detected_templates/"
+        folder = "data/performances_data/invalid_data/arval_classic_restitution_images/tmp/detected_templates/"
         fig.savefig(folder + template_name[:-4][-8:] + "_" + image_name)
         #plt.show()
 
@@ -385,6 +385,9 @@ def crop_blocks_in_image(image, blocks, output_dir, input_filename):
         cropped_image = image[y1:y2, x1:x2]
         output_filename = f"{base_filename}_{i}.jpeg"
         logger.info(f"Saving cropped image to {output_dir}/{output_filename}")
+        if len(cropped_image) == 0:
+            logger.warning(f"Empty image detected. Skipping {output_filename}")
+            continue
         cv2.imwrite(os.path.join(output_dir, output_filename), cropped_image)
 
 
