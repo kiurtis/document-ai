@@ -36,8 +36,10 @@ import numpy as np
 # %load_ext autoreload
 # %autoreload 2
 
-from template_matching_function import get_image_dimensions,\
-    draw_contour_rectangles_on_image, crop_blocks_in_image, arval_classic_divide_and_crop_block2, arval_classic_divide_and_crop_block4,\
+
+#Importing functions
+from template_matching_function import get_image_dimensions,sam_pre_template_matching_function,\
+    draw_contour_rectangles_on_image,crop_blocks_in_image, arval_classic_divide_and_crop_block2, arval_classic_divide_and_crop_block4,\
     find_top_and_bot_of_arval_classic_restitution,resize_arval_classic,get_bloc2_rectangle,get_bloc4_rectangle,draw_rectangles_and_save
 
 
@@ -113,36 +115,47 @@ class ArvalClassicDocumentAnalyzer:
         Divide the arval_classic_restitution type document in 4 parts and save them in self.tmp_folder_path.
         """
 
+
+        try:
+            # Temporary file:
+            logger.info("Using SAM to crop image...")
+            output_temp_file_sam = str(self.tmp_folder_path) + '/SAM_' + self.document_name
+            sam_pre_template_matching_function(str(self.path_to_document), output_temp_file_sam, plot_option=False)
+
+        except Exception as e:
+            logger.error(f"An error occurred trying to use SAM {self.document_name}:{e}")
+
+
         try:
             # Getting block 2 and 4
-
-            file_dimensions = get_image_dimensions(self.path_to_document)
-
-            rezise_im = resize_arval_classic(str(self.path_to_document))
             # Temporary file:
-            output_temp_file = str(self.tmp_folder_path) +'/temps_' + self.document_name
+            output_temp_file = str(self.tmp_folder_path) + '/temps_' + self.document_name
 
-            print(output_temp_file)
+            if os.path.exists(output_temp_file_sam):
+                resize_im = resize_arval_classic(output_temp_file_sam)
+            else:
+                resize_im = resize_arval_classic(str(self.path_to_document))
+
             # Resizing image:
-            copy_of_rezise_im = rezise_im.copy()
+            copy_of_rezise_im = resize_im.copy()
 
             # Finding the bottom and the top of the document :
             top_rect, bottom_rect = find_top_and_bot_of_arval_classic_restitution(copy_of_rezise_im, output_temp_file,
                                                                                   self.template_path_top_block1,
                                                                                   self.template_path_bot_block4,
-                                                                                  print_img=False)
-            copy_of_rezise_im = rezise_im.copy()
+                                                                                  plot_img=False)
+            copy_of_rezise_im = resize_im.copy()
 
             # Searching block2
             logger.info("Getting blocks 2...")
             block2 = get_bloc2_rectangle(copy_of_rezise_im, output_temp_file, top_rect, bottom_rect,
-                                        self.template_path_top_block2, self.template_path_top_block3, print_img=True)
+                                         self.template_path_top_block2, self.template_path_top_block3, plot_img=True)
             logger.info("Getting blocks 4...")
-            copy_of_rezise_im = rezise_im.copy()
+            copy_of_rezise_im = resize_im.copy()
             block4 = get_bloc4_rectangle(copy_of_rezise_im, output_temp_file, block2, bottom_rect,
-                                        self.template_path_top_block4, print_img=True)
+                                         self.template_path_top_block4, plot_img=True)
 
-            copy_of_rezise_im = rezise_im.copy()
+            copy_of_rezise_im = resize_im.copy()
             draw_rectangles_and_save(copy_of_rezise_im, [block2, block4], output_temp_file)
 
             #draw_contour_rectangles_on_image(str(self.path_to_document), [block2, block4])
@@ -153,7 +166,7 @@ class ArvalClassicDocumentAnalyzer:
 
         try:
             # Cropping and saving the blocks images in the tmp folder
-            image = cv2.imread(self.path_to_document)
+            image = np.array(resize_im)
             logger.info("Cropping blocks...")
 
             crop_blocks_in_image(image, blocks,
@@ -162,7 +175,6 @@ class ArvalClassicDocumentAnalyzer:
             cropped_image_paths = [os.path.join(self.tmp_folder_path,
                                                 f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg")
                                    for i in range(len(blocks))]
-            print(cropped_image_paths)
         except Exception as e:
             logger.error(f"An error occurred trying to crop the image {self.document_name}:{e}")
 
@@ -587,6 +599,7 @@ for name, info in tqdm(files_to_iterate):
         #document_analyzer.plot_blocks()
 
         logger.info(f"Result: {document_analyzer.results}")
+
         result_validator = ResultValidator(document_analyzer.results, plate_number=info['plate_number'])
         result_validator.validate()
 
@@ -600,8 +613,11 @@ for name, info in tqdm(files_to_iterate):
             'details': [document_analyzer.results],
             }, index=[0])
             ])
+        i += 1
     except Exception as e:
+
         logger.error(f"Error {e} while analyzing {name}")
+
 
 dt = datetime.now().strftime("%Y%m%d_%H%M%S")
 full_result_analysis.to_csv(f'data/performances_data/full_result_analysis_{dt}.csv', index=False)
@@ -609,6 +625,7 @@ full_result_analysis.to_csv(f'data/performances_data/full_result_analysis_{dt}.c
 files_iterable = {file: all_documents[file] for file in files_to_test}.items()
 
 i = 0
+
 
 #Test on valid Files
 files_to_test = clean_listdir(Path('data/performances_data/valid_data/arval_classic_restitution_images/'))
@@ -620,7 +637,7 @@ for name in files_to_test:
     #document_analyzer.plot_blocks()
 
     i += 1
-    break
+
 
 print(' ')
 print('Number of file analysed :',i)
