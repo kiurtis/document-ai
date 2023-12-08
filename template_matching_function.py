@@ -805,12 +805,12 @@ else:
     os.system(f'wget -q https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth -P {os.path.join(HOME, "sam_weights")}')
     logger.info(f"{CHECKPOINT_PATH}; exists: {os.path.isfile(CHECKPOINT_PATH)}")
 
-device = "cuda"
+device = "mps"
 
 sam = sam_model_registry[model_type](checkpoint=CHECKPOINT_PATH)
 
 #If cuda available uncomment that line
-#sam.to(device=device)
+sam.to(device=device)
 
 mask_generator_2 = SamAutomaticMaskGenerator(
     model=sam,
@@ -824,39 +824,46 @@ mask_generator_2 = SamAutomaticMaskGenerator(
 
 
 def detect_page(img_path, sam_model=mask_generator_2, plot_option=False):
+    """
+    Detect
+    :param img_path:
+    If the page is already properly scanned, then it returns it, otherwise it crops it and returns the cropped image.
+    :param sam_model:
+    :param plot_option:
+    :return:
+    """
     image_bgr = cv2.imread(img_path)
     image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
 
     # Get dimensions of the image
     height, width, channels = image_rgb.shape
 
-    logger.info("Width and height of the image before SAM:", width, height)
+    logger.info(f"Width and height of the image before SAM:{width}, {height}")
 
     sam_result = sam_model.generate(image_rgb)
-
-    new_dict = []
+    logger.info(3)
+    selected_masks = []
 
     min_area = width * height * 60 / 100
     max_area = width * height
 
-    for i in sam_result:
+    for mask in sam_result:
 
-        if i['area'] > min_area and i['area'] < max_area:
-            new_dict.append(i)
+        if mask['area'] > min_area and mask['area'] < max_area:
+            selected_masks.append(mask)
 
-    if len(new_dict) < 1:
-        #print('width/height ratio : ', width / height)
+    if len(selected_masks) < 1:
         if plot_option:
             plt.imshow(image_rgb)
         return image_rgb
     else:
-
+        logger.info('At least one mask was found by SAM, cropping...')
         mask_annotator = sv.MaskAnnotator(color_lookup=sv.ColorLookup.INDEX)
 
-        detections = sv.Detections.from_sam(sam_result=new_dict)
+        detections = sv.Detections.from_sam(sam_result=selected_masks)
 
         annotated_image = mask_annotator.annotate(scene=image_bgr.copy(), detections=detections)
-        bbox = new_dict[0]['bbox']
+        bbox = selected_masks[0]['bbox'] #TODO: make sure that we pick the biggest one, not the first one
 
         cropped_image = image_bgr[int(bbox[1]):int(bbox[1]) + int(bbox[3]), int(bbox[0]):int(bbox[0]) + int(bbox[2])]
         height_c, width_c, channels = cropped_image.shape
@@ -877,7 +884,7 @@ def rotate_image_if_needed(image_path, output_path):
     ratio = original_image.width / original_image.height
 
     # Rotate the image if the ratio is not between 0.65 and 0.85
-    if not (0.65 <= ratio <= 0.85):
+    if not (ratio <= 0.85):
         rotated_image = original_image.rotate(90, expand=True)
         rotated_image.save(output_path)
         return "Image rotated and saved to " + output_path
@@ -904,6 +911,13 @@ def rotate_image(image_path, degrees, output_path):
 
 
 def sam_pre_template_matching_function(img_path, output_path, plot_option=False):
+    """
+    This function is used to crop the image with SAM, rotate it if needed and flip it if needed.
+    :param img_path:
+    :param output_path:
+    :param plot_option:
+    :return:
+    """
     # Cropping the image with SAM
     image = detect_page(img_path, plot_option=plot_option)
     cv2.imwrite(output_path, image)
@@ -911,7 +925,7 @@ def sam_pre_template_matching_function(img_path, output_path, plot_option=False)
     # Rotating
     rotate_image_if_needed(output_path, output_path)
 
-    # Test if the rotation was correct or filp it by 180°
+    # Test if the rotation was correct or flip it by 180°
     if is_upside_down(output_path):
         # Rotate the image 180 degrees
         result_path = rotate_image(output_path, 180, output_path)
