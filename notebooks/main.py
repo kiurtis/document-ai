@@ -617,6 +617,7 @@ for name, info in tqdm(files_to_iterate):
     except Exception as e:
 
         logger.error(f"Error {e} while analyzing {name}")
+    break
 
 
 dt = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -631,6 +632,7 @@ i = 0
 files_to_test = clean_listdir(Path('data/performances_data/valid_data/arval_classic_restitution_images/'))
 print(files_to_test)
 for name in files_to_test:
+    break
     pathtofile = 'data/performances_data/valid_data/arval_classic_restitution_images/'+ name
     document_analyzer = ArvalClassicDocumentAnalyzer(name, pathtofile, hyperparameters)
     document_analyzer.get_blocks()
