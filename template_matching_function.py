@@ -26,7 +26,7 @@ def get_image_dimensions(image_path):
         return img.size  # Returns a tuple (width, height)
 
 # Function to perform template matching at multiple scales
-def multi_scale_template_matching(image_path, template_path,scales, plot_img=False):
+def multi_scale_template_matching(image_path, template_path, scales, plot_img=False):
 
     def apply_template_matching(img, template, scale, results):
         resized_template = cv2.resize(template, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
@@ -84,6 +84,8 @@ def multi_scale_template_matching(image_path, template_path,scales, plot_img=Fal
         print(image_name)
         ax.set_title(f'Template matched:{template_name}\nScale: {best_scale} - Quality: {best_match_quality}')
         folder = "data/performances_data/invalid_data/arval_classic_restitution_images/tmp/detected_templates/"
+        os.makedirs(folder, exist_ok=True)
+
         fig.savefig(folder + template_name[:-4][-8:] + "_" + image_name)
         #plt.show()
 

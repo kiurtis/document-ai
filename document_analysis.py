@@ -389,7 +389,7 @@ class ArvalClassicDocumentAnalyzer:
 
     def analyze_block4(self):
         #We check if the block4 is subdvided:
-        if hasattr(self, self.block_4_info_path) and hasattr(self, self.block_4_sign_path):
+        if hasattr(self, "block_4_info_path") and hasattr(self, "block_4_sign_path"):
             self.analyze_block4_text(self.block_4_info_path, verbose=False, plot_boxes=False)
             self.analyze_block4_signature_and_stamp(self.block_4_sign_path)
         else:
@@ -398,12 +398,12 @@ class ArvalClassicDocumentAnalyzer:
 
     def analyze_block2(self):
         #We check if the block2 is subdvided:
-        if hasattr(self, self.block_2_info_path) and hasattr(self, self.block_2_sign_path):
+        if hasattr(self, "block_2_info_path") and hasattr(self, "block_2_sign_path"):
             self.analyze_block2_text(self.block_2_info_path, verbose=False, plot_boxes=False)
-            #self.analyze_block2_signature_and_stamp(self.block_2_sign_path)
+            self.analyze_block2_signature_and_stamp(self.block_2_sign_path)
         else:
             self.analyze_block2_text(self.file_path_block2, verbose=False, plot_boxes=False)
-            #self.analyze_block2_signature_and_stamp(self.file_path_block2)
+            self.analyze_block2_signature_and_stamp(self.file_path_block2)
 
     def manage_orientation(self):
         """

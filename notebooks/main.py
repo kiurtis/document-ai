@@ -229,7 +229,7 @@ files_to_test = all_documents.keys()
 files_to_iterate = {file: all_documents[file] for file in sorted(files_to_test)[:50] if file not in files_to_exclude}.items()
 
 for name, info in tqdm(files_to_iterate):
-    break
+
     try:
         if WITH_GPT:
             document_analyzer = ArvalClassicGPTDocumentAnalyzer(name, info['path'], hyperparameters)
@@ -237,7 +237,7 @@ for name, info in tqdm(files_to_iterate):
             document_analyzer = ArvalClassicDocumentAnalyzer(name, info['path'], hyperparameters)
         document_analyzer.analyze()
         document_analyzer.save_results()
-        #document_analyzer.plot_blocks()
+        document_analyzer.plot_blocks()
 
         logger.info(f"Result: {document_analyzer.results}")
 
@@ -264,23 +264,3 @@ full_result_analysis.to_csv(f'data/performances_data/full_result_analysis_{dt}.c
 
 files_iterable = {file: all_documents[file] for file in files_to_test}.items()
 
-i = 0
-
-#Test on valid Files
-path_fo_folder = Path('data/performances_data/invalid_data/arval_classic_restitution_images/')
-files_to_test = clean_listdir(path_fo_folder)
-files_to_test = files_to_test[1:]
-print(files_to_test)
-for name in files_to_test:
-    path_to_file = path_fo_folder / name
-    document_analyzer = ArvalClassicDocumentAnalyzer(name, path_to_file, hyperparameters)
-    document_analyzer.analyze()
-
-    #document_analyzer.plot_blocks()
-
-    i += 1
-    break
-
-print(' ')
-logger.info(f'Number of file analysed :{i}')
-print(' ')
