@@ -19,6 +19,7 @@ from pytesseract import Output
 
 load_dotenv(find_dotenv())
 PLOT_MATCHED_BLOCKS = os.environ.get('PLOT_MATCHED_BLOCKS')
+DEVICE = os.environ.get('DEVICE')
 
 def get_image_dimensions(image_path):
     with Image.open(image_path) as img:
@@ -805,12 +806,11 @@ else:
     os.system(f'wget -q https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth -P {os.path.join(HOME, "sam_weights")}')
     logger.info(f"{CHECKPOINT_PATH}; exists: {os.path.isfile(CHECKPOINT_PATH)}")
 
-device = "mps"
 
 sam = sam_model_registry[model_type](checkpoint=CHECKPOINT_PATH)
 
 #If cuda available uncomment that line
-#sam.to(device=device)
+sam.to(device=device)
 
 mask_generator_2 = SamAutomaticMaskGenerator(
     model=sam,
