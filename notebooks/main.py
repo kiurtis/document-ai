@@ -14,8 +14,6 @@
 
 # +
 import os
-os.chdir('..')
-    
 
 # +
 import PIL
@@ -52,7 +50,6 @@ from performance_estimation import has_found_box
 from utils import get_result_template, clean_listdir
 
 
-
 class ArvalClassicDocumentAnalyzer:
     def __init__(self, document_name, path_to_document, hyperparameters):
         self.document_name = document_name
@@ -69,8 +66,6 @@ class ArvalClassicDocumentAnalyzer:
         self.template_path_top_block3 = 'data/performances_data/template/arval_classic_restitution/template_descriptif.png'
         self.template_path_top_block4 = 'data/performances_data/template/arval_classic_restitution/template_end_block3.png'
 
-
-
         # Templates to subdivise the bloc:
         self.template_path_signature_block2 = 'data/performances_data/template/arval_classic_restitution/template_block_2_garage.png'
         self.template_path_signature_block4 = 'data/performances_data/template/arval_classic_restitution/template_block_4_long.png'
@@ -80,7 +75,7 @@ class ArvalClassicDocumentAnalyzer:
     
     def test_block_existence(self):
         """
-        Test if the blocks already in self.tmp_folder_path.
+        For each block, test if it exists. If one is missing, it return False.
         """
         block_doc = []
         file_name = ['block_2_info', 'block_2_sign', 'block_4_info', 'block_4_sign']
@@ -115,12 +110,11 @@ class ArvalClassicDocumentAnalyzer:
         Divide the arval_classic_restitution type document in 4 parts and save them in self.tmp_folder_path.
         """
 
-
         try:
             # Temporary file:
             logger.info("Using SAM to crop image...")
             output_temp_file_sam = str(self.tmp_folder_path) + '/SAM_' + self.document_name
-            sam_pre_template_matching_function(str(self.path_to_document), output_temp_file_sam, plot_option=False)
+            sam_pre_template_matching_function(str(self.path_to_document), output_temp_file_sam, plot_option=True)
 
         except Exception as e:
             logger.error(f"An error occurred trying to use SAM {self.document_name}:{e}")
@@ -203,7 +197,7 @@ class ArvalClassicDocumentAnalyzer:
         except Exception as e:
             logger.error(f"An error occurred trying to divide block 4 in two {self.document_name}:{e}")
 
-    def get_blocks(self):
+    def get_or_create_blocks(self):
         """
         Get the blocks: Create them if they don't exist or just retrieve them if they're already in self.tmp_folder_path
         """
@@ -326,7 +320,7 @@ class ArvalClassicDocumentAnalyzer:
         logger.info(f'Analyzing {self.document_name}')
         #self.manage_orientation()
         self.assess_overall_quality()
-        self.get_blocks()
+        self.get_or_create_blocks()
         logger.info(f'Getting result template...')
         self.get_result_template()
         logger.info(f'Analyzing block 2...')
@@ -587,8 +581,8 @@ files_to_test = all_documents.keys()
 
 files_to_iterate = {file: all_documents[file] for file in sorted(files_to_test)[:50] if file not in files_to_exclude}.items()
 
-
 for name, info in tqdm(files_to_iterate):
+    break
     try:
         if WITH_GPT:
             document_analyzer = ArvalClassicGPTDocumentAnalyzer(name, info['path'], hyperparameters)
@@ -613,7 +607,6 @@ for name, info in tqdm(files_to_iterate):
             'details': [document_analyzer.results],
             }, index=[0])
             ])
-        i += 1
     except Exception as e:
 
         logger.error(f"Error {e} while analyzing {name}")
@@ -626,19 +619,20 @@ files_iterable = {file: all_documents[file] for file in files_to_test}.items()
 
 i = 0
 
-
 #Test on valid Files
-files_to_test = clean_listdir(Path('data/performances_data/valid_data/arval_classic_restitution_images/'))
+path_fo_folder = Path('data/performances_data/invalid_data/arval_classic_restitution_images/')
+files_to_test = clean_listdir(path_fo_folder)
+files_to_test = files_to_test[1:]
 print(files_to_test)
 for name in files_to_test:
-    pathtofile = 'data/performances_data/valid_data/arval_classic_restitution_images/'+ name
-    document_analyzer = ArvalClassicDocumentAnalyzer(name, pathtofile, hyperparameters)
-    document_analyzer.get_blocks()
-    #document_analyzer.plot_blocks()
+    path_to_file = path_fo_folder / name
+    document_analyzer = ArvalClassicDocumentAnalyzer(name, path_to_file, hyperparameters)
+    document_analyzer.get_or_create_blocks()
+    document_analyzer.plot_blocks()
 
     i += 1
-
+    break
 
 print(' ')
-print('Number of file analysed :',i)
+logger.info(f'Number of file analysed :{i}')
 print(' ')
