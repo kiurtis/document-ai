@@ -810,7 +810,7 @@ device = "mps"
 sam = sam_model_registry[model_type](checkpoint=CHECKPOINT_PATH)
 
 #If cuda available uncomment that line
-sam.to(device=device)
+#sam.to(device=device)
 
 mask_generator_2 = SamAutomaticMaskGenerator(
     model=sam,
