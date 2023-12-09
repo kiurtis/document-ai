@@ -23,7 +23,6 @@ import pandas as pd
 from tqdm import tqdm
 from document_analysis import ArvalClassicDocumentAnalyzer,ArvalClassicGPTDocumentAnalyzer
 from document_validator import ResultValidator
-from Levenshtein import distance as l_distance
 from loguru import logger
 
 # %load_ext autoreload
@@ -55,7 +54,8 @@ for status in [#'valid',
                 all_documents[file_name] = {}
                 all_documents[file_name]['path'] = file_path
                 all_documents[file_name]['validated'] = (status == 'valid')
-                print(file_name)
+                all_documents[file_name]['plate_number'] = file_name.split('_')[0]
+
 
                 if status == "valid":
                     all_documents[file_name]['cause'] = "-"
@@ -64,7 +64,9 @@ for status in [#'valid',
                     same_plate_number = invalid_restitutions_infos['plateNumber'].apply(lambda x: x in file_name)
                     all_documents[file_name]['cause'] = invalid_restitutions_infos.loc[same_filename & same_plate_number,
                     'adminComment'].values[0]
+
                 all_documents[file_name]['plate_number'] = file_name.split('_')[0]
+
         except Exception as e:
             print(e)
             print(file_name)
@@ -132,7 +134,7 @@ for name, info in tqdm(files_to_iterate):
             document_analyzer = ArvalClassicDocumentAnalyzer(name, info['path'], hyperparameters)
         document_analyzer.analyze()
         document_analyzer.save_results()
-        document_analyzer.plot_blocks()
+        #document_analyzer.plot_blocks()
 
         logger.info(f"Result: {document_analyzer.results}")
 

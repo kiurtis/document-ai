@@ -1,3 +1,5 @@
+from Levenshtein import distance as l_distance
+
 
 class ResultValidator:
     def __init__(self, results, plate_number):
@@ -93,6 +95,9 @@ class ResultValidator:
         self.validate_block4_is_filled()
         self.validate_block4_is_filled_by_company()
         self.gather_refused_motivs()
+
+        print('self.refused_causes')
+        print(self.refused_causes)
 
         self.validated = self.stamps_are_ok and self.stamps_are_ok and self.mileage_is_ok and self.number_plate_is_filled and self.number_plate_is_right and self.block4_is_filled and self.block4_is_filled_by_company
         return self.validated
