@@ -12,11 +12,10 @@ from pathlib import Path
 
 #Importing functions
 from utils import get_result_template, clean_listdir
-from template_matching_function import get_image_dimensions,sam_pre_template_matching_function,\
+from template_matching_function import get_image_dimensions,\
     draw_contour_rectangles_on_image,crop_blocks_in_image, arval_classic_divide_and_crop_block2, arval_classic_divide_and_crop_block4,\
     find_top_and_bot_of_arval_classic_restitution,resize_arval_classic,get_bloc2_rectangle,get_bloc4_rectangle,draw_rectangles_and_save
-
-
+from sam import sam_pre_template_matching_function
 from pipeline import get_processed_boxes_and_words,postprocess_boxes_and_words_arval_classic_restitution
 from document_parsing import find_next_right_word
 from image_processing import get_image_orientation, rotate_image
