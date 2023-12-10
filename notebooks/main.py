@@ -119,11 +119,19 @@ bad_orientation_file = ["EC-609-NN_PVR.jpeg",
 "GB-884-EE_PV.jpeg",
 "GF-784-CM_PVARVAL.jpeg"]
 
-files_to_exclude = [] + bad_orientation_file  # Could depends on different cases
+#files_to_exclude = [] + bad_orientation_file  # Could depends on different cases
 
 files_to_test = all_documents.keys()
 
-files_to_iterate = {file: all_documents[file] for file in sorted(files_to_test)[:50] if file not in files_to_exclude}.items()
+#files_to_test = ['EM-272-VS_Document_p1.jpeg' # Un doigt bloque la reconnaissance d'un des templates
+#                 ]
+
+working_files = pd.read_csv('data/performances_data/full_result_analysis_20231208_192447.csv')['document_name'].tolist()
+files_to_exclude = [] + working_files
+
+files_to_iterate = {file: all_documents[file]
+                    for file in sorted(files_to_test)[:50]
+                    if file not in files_to_exclude}.items()
 
 for name, info in tqdm(files_to_iterate):
 
@@ -149,12 +157,23 @@ for name, info in tqdm(files_to_iterate):
             'true_cause': [info['cause']],
             'predicted_cause': [", ".join(result_validator.refused_causes)],
             'details': [document_analyzer.results],
+            'error':[None]
             }, index=[0])
             ])
     except Exception as e:
-
+        raise e
+        pd.concat([full_result_analysis,
+                   pd.DataFrame({
+                       'document_name': [name],
+                       'true_status': [info['validated']],
+                       'predicted_status': [None],
+                       'true_cause': [info['cause']],
+                       'predicted_cause': [None],
+                       'details': [None],
+                       'error':[e]
+                   }, index=[0])
+                   ])
         logger.error(f"Error {e} while analyzing {name}")
-    break
 
 
 dt = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -162,3 +181,7 @@ full_result_analysis.to_csv(f'data/performances_data/full_result_analysis_{dt}.c
 
 files_iterable = {file: all_documents[file] for file in files_to_test}.items()
 
+
+# Typologie d'erreur
+# - Could not find block 2
+# - Could not find block 4

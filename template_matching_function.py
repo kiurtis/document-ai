@@ -41,9 +41,9 @@ def multi_scale_template_matching(image_path, template_path, scales, plot_img=Fa
         best_match_quality, best_match_coordinates, best_scale = sorted_results[0]
         return best_match_quality, best_match_coordinates, best_scale
 
-    img = cv2.imread(image_path, 0)
+    img = cv2.imread(image_path.as_posix(), 0)
     logger.info(f"Image shape: {img.shape}")
-    template = cv2.imread(template_path, 0)
+    template = cv2.imread(template_path.as_posix(), 0)
     w, h = template.shape[::-1]
     logger.info(f"Template initial shape: {template.shape}")
     # List to store the results
@@ -70,14 +70,13 @@ def multi_scale_template_matching(image_path, template_path, scales, plot_img=Fa
         # Display the result
         ax.imshow(img_rgb)
         template_name = Path(template_path).name
-        image_name = Path(image_path).name
-        print(image_name)
+        document_name_no_ext = Path(image_path).parent.name
         ax.set_title(f'Template matched:{template_name}\nScale: {best_scale} - Quality: {best_match_quality}')
-        folder = "data/performances_data/invalid_data/arval_classic_restitution_images/tmp/detected_templates/"
-        os.makedirs(folder, exist_ok=True)
+        folder = Path(f"data/performances_data/invalid_data/arval_classic_restitution_images/tmp/{document_name_no_ext}/detected_templates")
 
-        fig.savefig(folder + template_name[:-4][-8:] + "_" + image_name)
-        #plt.show()
+        os.makedirs(folder, exist_ok=True)
+        fig.savefig(folder / f"detected_{template_name}")
+        plt.show()
 
     return output_image_path, best_match_quality, best_scale, best_match_coordinates
 
@@ -223,14 +222,15 @@ def isolate_code_bar_part_arval_classic(image, output_image_save, plot_img=False
 # Save the modified image
     image.save(output_image_save)
 
-def get_code_bar_position(rezise_im, output_temp_file, template_path_bot_block4, plot_img):
-    isolate_code_bar_part_arval_classic(rezise_im, output_temp_file, plot_img=False)
+def get_code_bar_position(rezise_im, output_tmp_folder, template_path_bot_block4, plot_img):
+    output_temp_file = output_tmp_folder / 'code_bar.jpeg'
+    isolate_code_bar_part_arval_classic(rezise_im, output_temp_file, plot_img=plot_img)
     scales = np.linspace(0.26, 1.3, 20)
     output_image_path, best_match_quality, best_scale, best_match_coordinates = multi_scale_template_matching(output_temp_file, template_path_bot_block4, scales, plot_img=plot_img)
     return best_match_coordinates
 
 
-def isolate_logo_part_arval_classic(image, output_image_save, plot_img=False):
+def isolate_logo_part_arval_classic(image, output_image_path, plot_img=False):
     # Prepare to draw on the image
     draw = ImageDraw.Draw(image)
 
@@ -260,19 +260,21 @@ def isolate_logo_part_arval_classic(image, output_image_save, plot_img=False):
     if plot_img:
         image.show()
 # Save the modified image
-    image.save(output_image_save)
+    image.save(output_image_path)
 
-def get_top_bloc_position(rezise_im, output_temp_file, template_path_top_block1, plot_img):
-    isolate_logo_part_arval_classic(rezise_im, output_temp_file, plot_img=False)
+def get_top_bloc_position(resize_img, output_tmp_folder, template_path_top_block1, plot_img):
+    output_temp_file = output_tmp_folder / 'arval_logo.jpeg'
+    isolate_logo_part_arval_classic(resize_img, output_temp_file, plot_img=plot_img)
     scales = np.linspace(0.26, 1.3, 20)
     output_image_path, best_match_quality, best_scale, best_match_coordinates = multi_scale_template_matching(output_temp_file, template_path_top_block1, scales, plot_img=plot_img)
     return best_match_coordinates
 
-def find_top_and_bot_of_arval_classic_restitution(rezise_im, output_temp_file, template_path_top_block1, template_path_bot_block4, plot_img=False):
-    copy_of_rezise_im = rezise_im.copy()
-    top_rect = get_top_bloc_position(copy_of_rezise_im, output_temp_file, template_path_top_block1, plot_img=False)
-    copy_of_rezise_im = rezise_im.copy()
-    bottom_rect = get_code_bar_position(copy_of_rezise_im, output_temp_file, template_path_bot_block4, plot_img=False)
+def find_top_and_bot_of_arval_classic_restitution(rezise_img, output_tmp_folder, template_path_top_block1,
+                                                  template_path_bot_block4, plot_img=False):
+    copy_of_resize_img = rezise_img.copy()
+    top_rect = get_top_bloc_position(copy_of_resize_img, output_tmp_folder, template_path_top_block1, plot_img=plot_img)
+    copy_of_resize_img = rezise_img.copy()
+    bottom_rect = get_code_bar_position(copy_of_resize_img, output_tmp_folder, template_path_bot_block4, plot_img=plot_img)
 
     if plot_img:
         draw = ImageDraw.Draw(rezise_im)
@@ -314,14 +316,14 @@ def multi_scale_multi_results_temp_matching(image_path, temp_path, output_path, 
             cv2.rectangle(img, top_left, bottom_right, (255, 0, 0), 3)  # Red color, 3 px thickness
         fig, ax = plt.subplots()
         ax.imshow(img)
-        #plt.show()
-
+        plt.show()
 
         template_name = Path(temp_path).name
         image_name = Path(image_path).name
         ax.set_title(f'Template matched:{template_name}\nScale:  - Quality: ')
+
         folder = output_path[:-5]
-        fig.savefig(folder + template_name[:-4][-8:] + "_" + image_name)
+        fig.savefig(folder / f"{template_name[:-4][-8:]}_{image_name}")
     return list_coord
     
 
@@ -459,7 +461,7 @@ def isolate_top_bloc2(image, output_image_save, top_rect, bottom_rect, plot_img=
     # Create white rectangles over the entire image except for the specified section
     vertical_lines = [bottom_of_top_rect + i * spacing for i in range(1, 4)]
     vertical_lines = [bottom_of_top_rect] + vertical_lines + [top_of_bottom_rect]
-    vertical_lines = [0.0] +vertical_lines + [height]
+    vertical_lines = [0.0] + vertical_lines + [height]
 
     for i in range(len(vertical_lines)-1):
         for j in range(2):  # There are 2 vertical sections, divided by middle_x
@@ -480,7 +482,7 @@ def isolate_top_bloc2(image, output_image_save, top_rect, bottom_rect, plot_img=
     image.save(output_image_save)
 
 def get_top_bloc_2_position(rezise_im, output_temp_file, top_rect, bottom_rect, template_path_top_block2, plot_img=False):
-    isolate_top_bloc2(rezise_im, output_temp_file, top_rect, bottom_rect, plot_img=False)
+    isolate_top_bloc2(rezise_im, output_temp_file, top_rect, bottom_rect, plot_img=plot_img)
     scales = np.linspace(0.26, 1.3, 20)
     output_image_path, best_match_quality, best_scale, best_match_coordinates = multi_scale_template_matching(output_temp_file, template_path_top_block2, scales, plot_img=plot_img)
     return best_match_coordinates
@@ -538,19 +540,23 @@ def isolate_top_bloc3(image, output_image_save, top_rect, bottom_rect, plot_img=
     image.save(output_image_save)
 
 def get_top_bloc_3_position(rezise_im, output_temp_file, top_rect, bottom_rect, template_path_top_block3, plot_img=False):
-    isolate_top_bloc3(rezise_im, output_temp_file, top_rect, bottom_rect, plot_img=False)
+    isolate_top_bloc3(rezise_im, output_temp_file, top_rect, bottom_rect, plot_img=plot_img)
     scales = np.linspace(0.26, 1.3, 20)
     output_image_path, best_match_quality, best_scale, best_match_coordinates = multi_scale_template_matching(output_temp_file, template_path_top_block3, scales, plot_img=plot_img)
     return best_match_coordinates
 
-def get_bloc2_rectangle(rezise_im, output_temp_file, top_rect, bottom_rect, template_path_top_block2, template_path_top_block3, plot_img=False):
+def get_block2_rectangle(rezise_im, output_temp_file, top_rect, bottom_rect, template_path_top_block2, template_path_top_block3, plot_img=False):
+    folder = Path(output_temp_file).parent
     width, height = rezise_im.size
     rezise_im1 = rezise_im.copy()
+    output_temp_file = folder / 'top_block2.jpeg'
+
     top_bloc2 = get_top_bloc_2_position(rezise_im1, output_temp_file, top_rect, bottom_rect, template_path_top_block2,
-                                        plot_img=False)
+                                        plot_img=plot_img)
     rezise_im2 = rezise_im.copy()
+    output_temp_file = folder / 'top_block3.jpeg'
     top_bloc3 = get_top_bloc_3_position(rezise_im2, output_temp_file, top_rect, bottom_rect, template_path_top_block3,
-                                        plot_img=False)
+                                        plot_img=plot_img)
 
     # Top of the first rectangle (y1 of top_rect)
     top_y = top_bloc2[0][1]
@@ -568,7 +574,7 @@ def get_bloc2_rectangle(rezise_im, output_temp_file, top_rect, bottom_rect, temp
         folder = Path(output_temp_file).parent
 
         # Construct the new file path for saving
-        outputsave = folder / f"block2_{image_name}"
+        outputsave = folder / f"block2_rectangle.jpeg"
 
         # Save the image
         rezise_im.save(outputsave)
@@ -629,16 +635,20 @@ def isolate_top_bloc4(image, output_image_save, top_rect, bottom_rect, plot_img=
     image.save(output_image_save)
 
 def get_top_bloc_4_position(rezise_im, output_temp_file, top_rect, bottom_rect, template_path_top_block4, plot_img=False):
-    isolate_top_bloc4(rezise_im, output_temp_file, top_rect, bottom_rect, plot_img=False)
+    isolate_top_bloc4(rezise_im, output_temp_file, top_rect, bottom_rect, plot_img=plot_img)
     scales = np.linspace(0.26, 1.3, 20)
     output_image_path, best_match_quality, best_scale, best_match_coordinates = multi_scale_template_matching(output_temp_file, template_path_top_block4, scales, plot_img=plot_img)
     return best_match_coordinates
 
-def get_bloc4_rectangle(rezise_im, output_temp_file, top_rect, bottom_rect, template_path_top_block4, plot_img=False):
+def get_block4_rectangle(rezise_im, output_temp_file, top_rect, bottom_rect, template_path_top_block4, plot_img=False):
+    folder = Path(output_temp_file).parent
+
     width, height = rezise_im.size
     rezise_im1 = rezise_im.copy()
+    output_temp_file = folder / 'bottom_left.jpeg'
+
     top_bloc4 = get_top_bloc_4_position(rezise_im1, output_temp_file, top_rect, bottom_rect, template_path_top_block4,
-                                        plot_img=False)
+                                        plot_img=plot_img)
 
     bot_bloc4 = bottom_rect
 
@@ -655,7 +665,6 @@ def get_bloc4_rectangle(rezise_im, output_temp_file, top_rect, bottom_rect, temp
 
         # Get the image name and folder path
         image_name = Path(output_temp_file).name
-        folder = Path(output_temp_file).parent
 
         # Construct the new file path for saving
         outputsave = folder / f"block4_{image_name}"
@@ -704,23 +713,23 @@ def divide_and_fill_image3_5(image_path, output_image_save, plot_img=False):
         image.show()
 
     # Save the modified image
-    image.save(output_image_save)
+    image.save(output_image_path)
 
 #Dividing bloc 2:
 def arval_classic_divide_and_crop_block2(file_path_block2, output_fold, file_name, template_path_signature_block2) :
 
-        output_temps_image_save = str(output_fold) +"/temps_dividing_block.jpg"
-        divide_and_fill_image3_5(file_path_block2, output_temps_image_save, plot_img=False)
+        output_tmp_image_save = output_fold / "tmp_dividing_block.jpg"
+        divide_and_fill_image3_5(file_path_block2, output_tmp_image_save, plot_img=False)
         scales = np.linspace(0.26, 1.3, 20)
-        output_image_path, match_quality, scale, list_coord_signa_block2 = multi_scale_template_matching(output_temps_image_save,
+        output_image_path, match_quality, scale, list_coord_signa_block2 = multi_scale_template_matching(output_tmp_image_save,
                                                                                                          template_path_signature_block2,scales,
                                                                                                          plot_img=PLOT_MATCHED_BLOCKS)
 
         block_2_info, block_2_sign = crop_image_around_reference(file_path_block2, list_coord_signa_block2)
         
         # If you want to save the cropped images
-        block_2_info_path = str(os.path.join(output_fold, f"{os.path.splitext(file_name)[0]}_block_2_info.jpeg"))
-        block_2_sign_path = str(os.path.join(output_fold, f"{os.path.splitext(file_name)[0]}_block_2_sign.jpeg"))
+        block_2_info_path = output_fold / f"{os.path.splitext(file_name)[0]}_block_2_info.jpeg"
+        block_2_sign_path = output_fold / f"{os.path.splitext(file_name)[0]}_block_2_sign.jpeg"
         
         cv2.imwrite(block_2_info_path, block_2_info)
         cv2.imwrite(block_2_sign_path, block_2_sign)
@@ -753,22 +762,22 @@ def divide_and_fill_image_1_3(image_path, output_image_save, plot_img=False):
         image.show()
 
     # Save the modified image
-    image.save(output_image_save)
+    image.save(output_image_path)
 
 def arval_classic_divide_and_crop_block4(file_path_block4,output_fold,file_name,template_path_signature_block4) :
-        output_temps_image_save = str(output_fold) +"/temps_dividing_block.jpg"
-        divide_and_fill_image_1_3(file_path_block4, output_temps_image_save, plot_img=False)
+        output_tmp_image_save = output_fold / "tmp_dividing_block.jpg"
+        divide_and_fill_image_1_3(file_path_block4, output_tmp_image_save, plot_img=False)
         scales = np.linspace(0.26, 1.3, 20)
-        output_image_path, match_quality, scale, list_coord_signa_block4 = multi_scale_template_matching(output_temps_image_save,
+        output_image_path, match_quality, scale, list_coord_signa_block4 = multi_scale_template_matching(output_tmp_image_save,
                                                                                                          template_path_signature_block4, scales,plot_img=PLOT_MATCHED_BLOCKS)
 
         block_4_info, block_4_sign = crop_image_around_reference2(file_path_block4, list_coord_signa_block4)
         
         # If you want to save the cropped images
-        block_4_info_path = str(os.path.join(output_fold, f"{os.path.splitext(file_name)[0]}_{'block_4_info'}.jpeg"))
-        block_4_sign_path = str(os.path.join(output_fold, f"{os.path.splitext(file_name)[0]}_{'block_4_sign'}.jpeg"))
+        block_4_info_path = output_fold / f"{os.path.splitext(file_name)[0]}_{'block_4_info'}.jpeg"
+        block_4_sign_path = output_fold / f"{os.path.splitext(file_name)[0]}_{'block_4_sign'}.jpeg"
         
         cv2.imwrite(block_4_info_path, block_4_info)
         cv2.imwrite(block_4_sign_path, block_4_sign)
     
-        return block_4_info_path,block_4_sign_path
+        return block_4_info_path, block_4_sign_path

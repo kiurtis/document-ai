@@ -137,7 +137,7 @@ def rotate_image(image_path, degrees, output_path):
     return output_path
 
 
-def sam_pre_template_matching_function(img_path, output_path, plot_option=False):
+def sam_pre_template_matching_function(img_path, output_folder, plot_option=False):
     """
     This function is used to crop the image with SAM, rotate it if needed and flip it if needed.
     :param img_path:
@@ -147,7 +147,9 @@ def sam_pre_template_matching_function(img_path, output_path, plot_option=False)
     """
     # Cropping the image with SAM
     image = detect_page(img_path, plot_option=plot_option)
-    cv2.imwrite(output_path, image)
+    os.makedirs(output_folder, exist_ok=True)
+    output_path = output_folder / 'cropped_by_SAM.jpeg'
+    cv2.imwrite(output_path.as_posix(), image)
 
     # Rotating
     rotate_image_if_needed(output_path, output_path)
@@ -155,7 +157,10 @@ def sam_pre_template_matching_function(img_path, output_path, plot_option=False)
     # Test if the rotation was correct or flip it by 180°
     if is_upside_down(output_path):
         # Rotate the image 180 degrees
-        result_path = rotate_image(output_path, 180, output_path)
+        output_path = rotate_image(output_path, 180, output_path)
         logger.info(f"Image was upside down and has been rotated. Saved to {result_path}")
     else:
         logger.info("Image is not upside down.")
+
+    return output_path
+

@@ -12,9 +12,8 @@ from pathlib import Path
 
 #Importing functions
 from utils import get_result_template, clean_listdir
-from template_matching_function import get_image_dimensions,\
-    draw_contour_rectangles_on_image,crop_blocks_in_image, arval_classic_divide_and_crop_block2, arval_classic_divide_and_crop_block4,\
-    find_top_and_bot_of_arval_classic_restitution,resize_arval_classic,get_bloc2_rectangle,get_bloc4_rectangle,draw_rectangles_and_save
+from template_matching_function import get_image_dimensions, draw_contour_rectangles_on_image, crop_blocks_in_image, arval_classic_divide_and_crop_block2, arval_classic_divide_and_crop_block4,\
+    find_top_and_bot_of_arval_classic_restitution, resize_arval_classic, get_block2_rectangle, get_block4_rectangle, draw_rectangles_and_save
 from sam import sam_pre_template_matching_function
 from pipeline import get_processed_boxes_and_words,postprocess_boxes_and_words_arval_classic_restitution
 from document_parsing import find_next_right_word
@@ -29,33 +28,34 @@ class ArvalClassicDocumentAnalyzer:
         self.document_name = document_name
         self.path_to_document = path_to_document
         self.results = {}  # To be filled with results of analysis
-        self.folder_path = os.path.dirname(self.path_to_document)  # Folder where the file is
-        self.tmp_folder_path = os.path.join(self.folder_path, "tmp")  # Folder where we'll store the blocks
+        self.folder_path = Path(self.path_to_document).parent  # Folder where the file is
+        self.tmp_folder_path = self.folder_path / "tmp"  # Folder where we'll store the blocks
         self.hyperparameters = hyperparameters
+        self.cropped_by_sam = False
 
         # Templates used to process the template matching
-        self.template_path_top_block1 = 'data/performances_data/template/arval_classic_restitution/template_top_left.png'
-        self.template_path_bot_block4 = 'data/performances_data/template/arval_classic_restitution/template_barcode.png'
-        self.template_path_top_block2 = 'data/performances_data/template/arval_classic_restitution/template_path_top_block2.png'
-        self.template_path_top_block3 = 'data/performances_data/template/arval_classic_restitution/template_descriptif.png'
-        self.template_path_top_block4 = 'data/performances_data/template/arval_classic_restitution/template_end_block3.png'
+        template_folder = Path('data/performances_data/template/arval_classic_restitution')
+        self.template_path_top_block1 = template_folder / 'template_top_left.png'
+        self.template_path_bot_block4 =  template_folder / 'template_barcode.png'
+        self.template_path_top_block2 =  template_folder /  'template_path_top_block2.png'
+        self.template_path_top_block3 =  template_folder /  'template_descriptif.png'
+        self.template_path_top_block4 =  template_folder / 'template_end_block3.png'
 
         # Templates to subdivise the bloc:
-        self.template_path_signature_block2 = 'data/performances_data/template/arval_classic_restitution/template_block_2_garage.png'
-        self.template_path_signature_block4 = 'data/performances_data/template/arval_classic_restitution/template_block_4_long.png'
+        self.template_path_signature_block2 =  template_folder / 'template_block_2_garage.png'
+        self.template_path_signature_block4 =  template_folder / 'template_block_4_long.png'
 
         if not os.path.exists(self.tmp_folder_path):
             os.makedirs(self.tmp_folder_path)
 
-    def test_block_2_subdivision_existence(self):
+    def test_blocks_existence(self, filenames):
         """
         For each block, test if it exists. If one is missing, it return False.
         """
         block_doc = []
-        file_name = ['block_2_info', 'block_2_sign']
         missing_files = []
 
-        for i in file_name:
+        for i in filenames:
             cropped_image_path = os.path.join(self.tmp_folder_path,
                                               f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg")
 
@@ -66,73 +66,6 @@ class ArvalClassicDocumentAnalyzer:
 
         if len(missing_files) == 0:
 
-            return True
-        else:
-            return False
-
-    def test_block_4_subdivision_existence(self):
-        """
-        For each block, test if it exists. If one is missing, it return False.
-        """
-        block_doc = []
-        file_name = ['block_4_info', 'block_4_sign']
-        missing_files = []
-
-        for i in file_name:
-            cropped_image_path = os.path.join(self.tmp_folder_path,
-                                              f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg")
-
-            if os.path.exists(cropped_image_path):
-                block_doc.append(cropped_image_path)
-            else:
-                missing_files.append(cropped_image_path)
-
-        if len(missing_files) == 0:
-
-            return True
-        else:
-            return False
-
-    def test_block_existence(self):
-        """
-        For each block, test if it exists. If one is missing, it return False.
-        """
-        block_doc = []
-        file_name = ['block_2_info', 'block_2_sign', 'block_4_info', 'block_4_sign']
-        missing_files = []
-
-        for i in file_name:
-            cropped_image_path = os.path.join(self.tmp_folder_path,
-                                              f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg")
-
-            if os.path.exists(cropped_image_path):
-                block_doc.append(cropped_image_path)
-            else:
-                missing_files.append(cropped_image_path)
-
-        if len(missing_files) == 0:
-
-            return True
-        else:
-            return False
-
-    def test_block_2_and_4_existence(self):
-        """
-        For block 2 and 4, test if it exists. If one is missing, it return False.
-        """
-        block_doc = []
-        missing_files = []
-
-        for i in range(2):
-            cropped_image_path = os.path.join(self.tmp_folder_path,
-                                              f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg")
-
-            if os.path.exists(cropped_image_path):
-                block_doc.append(cropped_image_path)
-            else:
-                missing_files.append(cropped_image_path)
-
-        if len(missing_files) == 0:
             return True
         else:
             return False
@@ -143,8 +76,7 @@ class ArvalClassicDocumentAnalyzer:
         """
         cropped_image_paths = []
         for i in range(2):
-            cropped_image_paths.append(os.path.join(self.tmp_folder_path,
-                                                    f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg"))
+            cropped_image_paths.append(self.tmp_folder_path / f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg")
 
         self.file_path_block2 = str(cropped_image_paths[0])
         self.file_path_block4 = str(cropped_image_paths[1])
@@ -167,7 +99,7 @@ class ArvalClassicDocumentAnalyzer:
         file_name = ['block_4_info', 'block_4_sign']
 
         for file_name in file_name:
-            path = os.path.join(self.tmp_folder_path, f"{os.path.splitext(self.document_name)[0]}_{file_name}.jpeg")
+            path = self.tmp_folder_path / f"{os.path.splitext(self.document_name)[0]}_{file_name}.jpeg"
             setattr(self, f"{file_name}_path", path)
 
 
@@ -175,58 +107,61 @@ class ArvalClassicDocumentAnalyzer:
         """
         Divide the arval_classic_restitution type document in 4 parts and save them in self.tmp_folder_path.
         """
-
+        document_name_no_ext = self.document_name.split(".")[0]
+        output_tmp_folder = self.tmp_folder_path / document_name_no_ext
         try:
             # Temporary file:
             logger.info("Using SAM to crop image...")
-            output_temp_file_sam = str(self.tmp_folder_path) + '/SAM_' + self.document_name
-            sam_pre_template_matching_function(str(self.path_to_document), output_temp_file_sam, plot_option=True)
-
+            output_temp_file_sam = sam_pre_template_matching_function(self.path_to_document, output_tmp_folder, plot_option=True)
+            self.cropped_by_sam = True
         except Exception as e:
-            logger.error(f"An error occurred trying to use SAM {self.document_name}:{e}")
+            logger.error(f"An error occurred trying to use SAM for the document {self.document_name}:{e}")
 
 
         try:
             # Getting block 2 and 4
             # Temporary file:
-            output_temp_file = str(self.tmp_folder_path) + '/temps_' + self.document_name
 
-            if os.path.exists(output_temp_file_sam):
-                resize_im = resize_arval_classic(output_temp_file_sam)
+            if self.cropped_by_sam:
+                resize_img = resize_arval_classic(output_temp_file_sam)
             else:
-                resize_im = resize_arval_classic(str(self.path_to_document))
+                resize_img = resize_arval_classic(self.path_to_document)
 
             # Resizing image:
-            copy_of_rezise_im = resize_im.copy()
+            copy_of_rezise_img = resize_img.copy()
 
             # Finding the bottom and the top of the document :
-            top_rect, bottom_rect = find_top_and_bot_of_arval_classic_restitution(copy_of_rezise_im, output_temp_file,
+            top_rect, bottom_rect = find_top_and_bot_of_arval_classic_restitution(copy_of_rezise_img, output_tmp_folder,
                                                                                   self.template_path_top_block1,
                                                                                   self.template_path_bot_block4,
                                                                                   plot_img=False)
-            copy_of_rezise_im = resize_im.copy()
+            copy_of_rezise_img = resize_img.copy()
 
             # Searching block2
             logger.info("Getting blocks 2...")
-            block2 = get_bloc2_rectangle(copy_of_rezise_im, output_temp_file, top_rect, bottom_rect,
+            output_temp_file = output_tmp_folder / 'block_2.jpeg'
+            block2 = get_block2_rectangle(copy_of_rezise_img, output_temp_file, top_rect, bottom_rect,
                                          self.template_path_top_block2, self.template_path_top_block3, plot_img=True)
             logger.info("Getting blocks 4...")
-            copy_of_rezise_im = resize_im.copy()
-            block4 = get_bloc4_rectangle(copy_of_rezise_im, output_temp_file, block2, bottom_rect,
+            copy_of_rezise_im = resize_img.copy()
+
+            output_temp_file = output_tmp_folder / 'block_4.jpeg'
+            block4 = get_block4_rectangle(copy_of_rezise_im, output_temp_file, block2, bottom_rect,
                                          self.template_path_top_block4, plot_img=True)
 
-            copy_of_rezise_im = resize_im.copy()
+            copy_of_rezise_im = resize_img.copy()
             draw_rectangles_and_save(copy_of_rezise_im, [block2, block4], output_temp_file)
 
             # draw_contour_rectangles_on_image(str(self.path_to_document), [block2, block4])
             blocks = [block2, block4]
 
         except Exception as e:
+            raise e
             logger.error(f"An error occurred trying to get blocks 2 and 4 of {self.document_name}:{e}")
 
         try:
             # Cropping and saving the blocks images in the tmp folder
-            image = np.array(resize_im)
+            image = np.array(resize_img)
             logger.info("Cropping blocks...")
 
             crop_blocks_in_image(image, blocks,
@@ -271,16 +206,17 @@ class ArvalClassicDocumentAnalyzer:
         Get the blocks: Create them if they don't exist or just retrieve them if they're already in self.tmp_folder_path
         """
         logger.info(f'Getting blocks...')
-        if self.test_block_2_and_4_existence():
+
+        if self.test_blocks_existence(filenames= ['block_2_info', 'block_2_sign', 'block_4_info', 'block_4_sign']): # 2 & 4
             logger.info(f'Blocks 2 and 4 already in tmp folder')
             self.read_block_2_and_4_path()
-            if self.test_block_2_subdivision_existence():
+            if self.test_blocks_existence(filenames=['block_2_info', 'block_2_sign']): # 2 only
                 logger.info(f'Blocks 2 subdivisions already in tmp folder')
                 self.read_block2_subdivised_path()
             else :
                 self.subdivising_and_cropping_block2()
 
-            if self.test_block_4_subdivision_existence():
+            if self.test_blocks_existence(filenames=['block_4_info', 'block_4_sign']): # 4 only
                 logger.info(f'Blocks 4 subdivisions already in tmp folder')
                 self.read_block4_subdivised_path()
             else :
