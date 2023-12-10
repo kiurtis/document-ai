@@ -126,7 +126,7 @@ files_to_test = all_documents.keys()
 #files_to_test = ['EM-272-VS_Document_p1.jpeg' # Un doigt bloque la reconnaissance d'un des templates
 #                 ]
 
-working_files = pd.read_csv('data/performances_data/full_result_analysis_20231208_192447.csv')['document_name'].tolist()
+working_files = pd.read_csv('results/full_result_analysis_20231208_192447.csv')['document_name'].tolist()
 files_to_exclude = [] + working_files
 
 files_to_iterate = {file: all_documents[file]
@@ -177,7 +177,7 @@ for name, info in tqdm(files_to_iterate):
 
 
 dt = datetime.now().strftime("%Y%m%d_%H%M%S")
-full_result_analysis.to_csv(f'data/performances_data/full_result_analysis_{dt}.csv', index=False)
+full_result_analysis.to_csv(f'results/full_result_analysis_{dt}.csv', index=False)
 
 files_iterable = {file: all_documents[file] for file in files_to_test}.items()
 
