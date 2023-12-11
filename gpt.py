@@ -61,7 +61,10 @@ def build_overall_quality_checking_payload(image_path):
     base64_image = encode_image(image_path)
 
     # Construct the content for each key
-    content = [{"type": "text", "text": f'Is the overall quality of the document good? Anwser only "yes" or "no".'}]
+    content = [{"type": "text", "text": f'Is the overall quality of the document ok? Answer "No" (and nothing else)'
+                                        f'if the document is very creased, poorly lit, very crumpled, poorly framed or '
+                                        f'distorted, otherwise answer "Yes" (and nothing else).'}]
+
 
     # Add the image part
     content.append({

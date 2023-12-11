@@ -123,12 +123,15 @@ bad_orientation_file = ["EC-609-NN_PVR.jpeg",
 
 files_to_test = all_documents.keys()
 
-#files_to_test = ['EM-272-VS_Document_p1.jpeg' # Un doigt bloque la reconnaissance d'un des templates
-#                 ]
-
+failing_file_explained = ['EM-272-VS_Document_p1.jpeg' # Un doigt bloque la reconnaissance d'un des templates
+                 ]
 working_files = pd.read_csv('results/full_result_analysis_20231208_192447.csv')['document_name'].tolist()
-files_to_exclude = [] + working_files
+working_files += ["EN-869-YH_Pvreprise_p1.jpeg",
+                  'EC-609-NN_PVR.jpeg',
+                  'ET-679-SV_PVrestitutionArval.jpeg']
+files_to_exclude = [] + working_files + failing_file_explained
 
+files_to_exclude = []
 files_to_iterate = {file: all_documents[file]
                     for file in sorted(files_to_test)[:50]
                     if file not in files_to_exclude}.items()
@@ -161,7 +164,6 @@ for name, info in tqdm(files_to_iterate):
             }, index=[0])
             ])
     except Exception as e:
-        raise e
         pd.concat([full_result_analysis,
                    pd.DataFrame({
                        'document_name': [name],
