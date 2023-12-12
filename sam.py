@@ -121,7 +121,7 @@ def rotate_image_if_needed(image_path, output_path):
 
 def is_upside_down(image_path):
     # Load the image
-    image = Image.open(image_path)
+    image = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
 
     # Use pytesseract to get orientation information
     ocr_data = pytesseract.image_to_osd(image, output_type=Output.DICT)

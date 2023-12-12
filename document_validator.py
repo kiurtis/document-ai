@@ -69,9 +69,9 @@ class ResultValidator:
         if not self.quality_is_ok:
             self.refused_causes.append('quality_is_not_ok')
         if not self.signatures_are_ok:
-            self.refused_causes.append('signature_is_ok')
+            self.refused_causes.append('signature_is_not_ok')
         if not self.stamps_are_ok:
-            self.refused_causes.append('stamp_is_ok')
+            self.refused_causes.append('stamp_is_not_ok')
         if not self.mileage_is_ok:
             self.refused_causes.append('mileage_is_not_ok')
         if not self.number_plate_is_filled:

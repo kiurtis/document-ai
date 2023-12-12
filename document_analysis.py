@@ -32,18 +32,22 @@ class ArvalClassicDocumentAnalyzer:
         self.tmp_folder_path = self.folder_path / "tmp"  # Folder where we'll store the blocks
         self.hyperparameters = hyperparameters
         self.cropped_by_sam = False
+        self.block_4_info_path = None
+        self.block_4_sign_path = None
+        self.block_2_info_path = None
+        self.block_2_sign_path = None
 
         # Templates used to process the template matching
         template_folder = Path('data/performances_data/template/arval_classic_restitution')
         self.template_path_top_block1 = template_folder / 'template_top_left.png'
-        self.template_path_bot_block4 =  template_folder / 'template_barcode.png'
-        self.template_path_top_block2 =  template_folder /  'template_path_top_block2.png'
-        self.template_path_top_block3 =  template_folder /  'template_descriptif.png'
-        self.template_path_top_block4 =  template_folder / 'template_end_block3.png'
+        self.template_path_bot_block4 = template_folder / 'template_barcode.png'
+        self.template_path_top_block2 = template_folder / 'template_path_top_block2.png'
+        self.template_path_top_block3 = template_folder / 'template_descriptif.png'
+        self.template_path_top_block4 = template_folder / 'template_end_block3.png'
 
         # Templates to subdivise the bloc:
-        self.template_path_signature_block2 =  template_folder / 'template_block_2_garage.png'
-        self.template_path_signature_block4 =  template_folder / 'template_block_4_long.png'
+        self.template_path_signature_block2 = template_folder / 'template_block_2_garage.png'
+        self.template_path_signature_block4 = template_folder / 'template_block_4_long.png'
 
         if not os.path.exists(self.tmp_folder_path):
             os.makedirs(self.tmp_folder_path)
@@ -117,7 +121,6 @@ class ArvalClassicDocumentAnalyzer:
         except Exception as e:
             logger.error(f"An error occurred trying to use SAM for the document {self.document_name}:{e}")
 
-
         try:
             # Getting block 2 and 4
             # Temporary file:
@@ -155,7 +158,6 @@ class ArvalClassicDocumentAnalyzer:
             blocks = [block2, block4]
 
         except Exception as e:
-            raise e
             logger.error(f"An error occurred trying to get blocks 2 and 4 of {self.document_name}:{e}")
 
         try:
@@ -182,10 +184,8 @@ class ArvalClassicDocumentAnalyzer:
             self.block_2_info_path, self.block_2_sign_path = arval_classic_divide_and_crop_block2(self.file_path_block2,
                                                                                                   self.tmp_folder_path,
                                                                                                   self.document_name,
-                                                                                                  self.template_path_signature_block2
-                                                                                                  )
+                                                                                                  self.template_path_signature_block2)
         except Exception as e:
-
             logger.error(f"An error occurred trying to divide block 2 in two {self.document_name}:{e}")
 
     def subdivising_and_cropping_block4(self):
@@ -232,7 +232,6 @@ class ArvalClassicDocumentAnalyzer:
             img = mpimg.imread(image_path)
             plt.imshow(img)
             plt.axis('off')  # Turn off axis numbers
-            plt.show()
 
     def get_result_template(self):
         """
@@ -384,7 +383,6 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
             image = PIL.Image.open(block4_text_image_path)
             plt.figure(figsize=(15, 15))
             plt.imshow(image)
-            plt.show()
 
         # Plot the block4
         payload = build_block_checking_payload(keys=self.template['block_4'],
@@ -399,7 +397,6 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
             image = PIL.Image.open(block2_text_image_path)
             plt.figure(figsize=(15, 15))
             plt.imshow(image)
-            plt.show()
 
         payload = build_block_checking_payload(keys=self.template['block_2'],
                                                image_path=block2_text_image_path)
@@ -411,18 +408,31 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
     def assess_overall_quality(self):
         payload = build_overall_quality_checking_payload(image_path=self.path_to_document)
         response = request_completion(payload)
-        self.overall_quality = response["choices"][0]['message']['content']
+
+        if 'error' in response.keys():
+            self.overall_quality = None
+            logger.warning(f'Overall quality assessment failed: {response["code"]}')
+        else:
+            self.overall_quality = response["choices"][0]['message']['content']
     def analyze_block2_signature_and_stamp(self,block_2_sign_path):
         logger.info(f'Analyzing block 2 signature and stamp...')
         payload = build_signature_checking_payload(image_path=block_2_sign_path)
         response = request_completion(payload)
-        self.signature_and_stamp_2 = response["choices"][0]['message']['content']
+        if 'error' in response.keys():
+            self.signature_and_stamp_2 = None
+            logger.warning(f'Block 2 signature and stamp assessment failed: {response["code"]}')
+        else:
+            self.signature_and_stamp_2 = response["choices"][0]['message']['content']
     def analyze_block4_signature_and_stamp(self,block_4_sign_path):
         logger.info(f'Analyzing block 2 signature and stamp...')
 
         payload = build_signature_checking_payload(image_path=block_4_sign_path)
         response = request_completion(payload)
-        self.signature_and_stamp_4 = response["choices"][0]['message']['content']
+        if 'error' in response.keys():
+            self.signature_and_stamp_4 = None
+            logger.warning(f'Block 4 signature and stamp assessment failed: {response["code"]}')
+        else:
+            self.signature_and_stamp_4 = response["choices"][0]['message']['content']
     def analyze(self):
         super().analyze()
         self.results['overall_quality'] = self.overall_quality

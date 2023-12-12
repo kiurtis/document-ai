@@ -103,53 +103,40 @@ files_to_test = ['ES-337-RE_PVR.jpeg', # Block 2 is badly detected
                  'GJ-053-HN_PV_Arval.jpeg' # Blocks 2 and 4 are not detected
                 ]
 
-bad_orientation_file = [#"EC-609-NN_PVR.jpeg",
-#"EH-082-TV_PVderestitution.jpeg",
-#"ET-679-SV_PVrestitutionArval.jpeg",
-#"EZ-561-VR_PVARVAL.jpeg",
-#"FA-580-FY_Pvderestitution.jpeg",
-#"FA-772-LB_Pv.jpeg",
-#"FF-495-RB_20230823_101857.jpeg",
-#"FG-767-EX_Pvdelivraisonv.jpeg",
-#"FG-882-EW_PV.jpeg",
-#"FH-639-SE_Pvrestitution.jpeg",
-#"FL-147-SN_Pvarval.jpeg",
-#"FN-117-GQ_PVARVAL.jpeg",
+bad_orientation_file = ["EC-609-NN_PVR.jpeg",
+"EH-082-TV_PVderestitution.jpeg",
+"ET-679-SV_PVrestitutionArval.jpeg",
+"EZ-561-VR_PVARVAL.jpeg",
+"FA-580-FY_Pvderestitution.jpeg",
+"FA-772-LB_Pv.jpeg",
+"FF-495-RB_20230823_101857.jpeg",
+"FG-767-EX_Pvdelivraisonv.jpeg",
+"FG-882-EW_PV.jpeg",
+"FH-639-SE_Pvrestitution.jpeg",
+"FL-147-SN_Pvarval.jpeg",
+"FN-117-GQ_PVARVAL.jpeg",
 "FY-915-LM_PVderestitution.jpeg",
-#"GB-884-EE_PV.jpeg",
+"GB-884-EE_PV.jpeg",
 "GF-784-CM_PVARVAL.jpeg"]
 
 #files_to_exclude = [] + bad_orientation_file  # Could depends on different cases
 
 files_to_test = all_documents.keys()
-print(len(files_to_test))
-#files_to_test = ['EM-272-VS_Document_p1.jpeg' # Un doigt bloque la reconnaissance d'un des templates
-#                 ]
 
-working_files = pd.read_csv('data/performances_data/full_result_analysis_20231209_191518.csv')['document_name'].tolist()
-files_to_exclude = [] + working_files
+failing_file_explained = ['EM-272-VS_Document_p1.jpeg' # Un doigt bloque la reconnaissance d'un des templates
+                 ]
+working_files = pd.read_csv('results/full_result_analysis_20231208_192447.csv')['document_name'].tolist()
+working_files += ["EN-869-YH_Pvreprise_p1.jpeg",
+                  'EC-609-NN_PVR.jpeg',
+                  'ET-679-SV_PVrestitutionArval.jpeg']
+files_to_exclude = [] + working_files + failing_file_explained
 
+files_to_exclude = []
 files_to_iterate = {file: all_documents[file]
                     for file in sorted(files_to_test)[:50]
                     if file not in files_to_exclude}.items()
 
-#taking only badly oriented files
-files_to_exclude = [] + bad_orientation_file  # Could depends on different cases
-
-
-files2 = ["EC-609-NN_PVR.jpeg","FA-772-LB_Pv.jpeg","FF-495-RB_20230823_101857.jpeg"]#,"FG-882-EW_PV.jpeg"]
-
-files_to_iterate = {file: all_documents[file]
-                    for file in sorted(files_to_test)[:50]
-                    if (file in files_to_exclude) and (file not in files2)}.items()
-
-
-print(len(files_to_iterate))
-
 for name, info in tqdm(files_to_iterate):
-    break
-    print(name)
-    print(info)
 
     try:
         if WITH_GPT:
@@ -192,9 +179,8 @@ for name, info in tqdm(files_to_iterate):
         logger.error(f"Error {e} while analyzing {name}")
 
 
-
 dt = datetime.now().strftime("%Y%m%d_%H%M%S")
-full_result_analysis.to_csv(f'data/performances_data/full_result_analysis_{dt}.csv', index=False)
+full_result_analysis.to_csv(f'results/full_result_analysis_{dt}.csv', index=False)
 
 files_iterable = {file: all_documents[file] for file in files_to_test}.items()
 
@@ -202,35 +188,3 @@ files_iterable = {file: all_documents[file] for file in files_to_test}.items()
 # Typologie d'erreur
 # - Could not find block 2
 # - Could not find block 4
-
-
-for name in bad_orientation_file:
-
-    print(name)
-    path = 'data/performances_data/invalid_data/arval_classic_restitution_images/' + name
-    #path = Path(path)
-    print(path)
-
-    # Check if the file exists
-    #if path.exists():
-     #   print(f"The file {path} exists.")
-    #else:
-     #   print(f"The file {path} does not exist.")
-
-
-
-    try:
-        if WITH_GPT:
-            document_analyzer = ArvalClassicGPTDocumentAnalyzer(name, path, hyperparameters)
-        else:
-            document_analyzer = ArvalClassicDocumentAnalyzer(name, path, hyperparameters)
-        document_analyzer.analyze()
-        document_analyzer.save_results()
-        #document_analyzer.plot_blocks()
-
-        logger.info(f"Result: {document_analyzer.results}")
-
-        #result_validator = ResultValidator(document_analyzer.results, plate_number=info['plate_number'])
-        #result_validator.validate()
-    except Exception as e:
-        raise e
