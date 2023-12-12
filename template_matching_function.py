@@ -277,7 +277,7 @@ def find_top_and_bot_of_arval_classic_restitution(rezise_img, output_tmp_folder,
     bottom_rect = get_code_bar_position(copy_of_resize_img, output_tmp_folder, template_path_bot_block4, plot_img=plot_img)
 
     if plot_img:
-        draw = ImageDraw.Draw(rezise_im)
+        draw = ImageDraw.Draw(rezise_img)
 
         # Draw rectangles
         for (top_left, bottom_right) in [top_rect, bottom_rect]:
@@ -288,11 +288,13 @@ def find_top_and_bot_of_arval_classic_restitution(rezise_img, output_tmp_folder,
         top_line, bottom_line, mid_line = calculate_line_heights(top_rect, bottom_rect)
 
         # Draw horizontal lines
-        img_width = rezise_im.width
+        img_width = rezise_img.width
         for y in [top_line, bottom_line, mid_line]:
             draw.line([(0, y), (img_width, y)], fill="green", width=2)
-        #rezise_im.show()
-        rezise_im.save(output_temp_file)
+        rezise_img.show()
+        #print(output_tmp_folder)
+        #output_temp_file = output_tmp_folder + "/top_bot_temp_file.jpeg"
+        #rezise_img.save(output_temp_file)
 
     return top_rect,bottom_rect
 

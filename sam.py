@@ -94,7 +94,7 @@ def detect_page(img_path, sam_model=mask_generator_2, plot_option=False):
 
         cropped_image = image_bgr[int(bbox[1]):int(bbox[1]) + int(bbox[3]), int(bbox[0]):int(bbox[0]) + int(bbox[2])]
         height_c, width_c, channels = cropped_image.shape
-        logger.info('width/height ratio after SAM cropping : ', width_c / height_c)
+        logger.info('width/height ratio after SAM cropping : {width_c}/ {height_c} ')
         if plot_option:
             sv.plot_images_grid(
                 images=[image_bgr, annotated_image, cropped_image],
@@ -114,7 +114,7 @@ def rotate_image_if_needed(image_path, output_path):
     if not (ratio <= 0.85):
         rotated_image = original_image.rotate(90, expand=True)
         rotated_image.save(output_path)
-        return "Image rotated and saved to " + output_path
+        return "Image rotated and saved to " + str(output_path)
     else:
         original_image.save(output_path)
         return "No rotation needed."
@@ -158,7 +158,7 @@ def sam_pre_template_matching_function(img_path, output_folder, plot_option=Fals
     if is_upside_down(output_path):
         # Rotate the image 180 degrees
         output_path = rotate_image(output_path, 180, output_path)
-        logger.info(f"Image was upside down and has been rotated. Saved to {result_path}")
+        logger.info(f"Image was upside down and has been rotated. Saved to {output_path}")
     else:
         logger.info("Image is not upside down.")
 

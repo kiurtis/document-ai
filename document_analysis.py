@@ -112,7 +112,7 @@ class ArvalClassicDocumentAnalyzer:
         try:
             # Temporary file:
             logger.info("Using SAM to crop image...")
-            output_temp_file_sam = sam_pre_template_matching_function(self.path_to_document, output_tmp_folder, plot_option=True)
+            output_temp_file_sam = sam_pre_template_matching_function(self.path_to_document, output_tmp_folder, plot_option=False)
             self.cropped_by_sam = True
         except Exception as e:
             logger.error(f"An error occurred trying to use SAM for the document {self.document_name}:{e}")
@@ -121,7 +121,6 @@ class ArvalClassicDocumentAnalyzer:
         try:
             # Getting block 2 and 4
             # Temporary file:
-
             if self.cropped_by_sam:
                 resize_img = resize_arval_classic(output_temp_file_sam)
             else:
@@ -134,7 +133,7 @@ class ArvalClassicDocumentAnalyzer:
             top_rect, bottom_rect = find_top_and_bot_of_arval_classic_restitution(copy_of_rezise_img, output_tmp_folder,
                                                                                   self.template_path_top_block1,
                                                                                   self.template_path_bot_block4,
-                                                                                  plot_img=False)
+                                                                                  plot_img=True)
             copy_of_rezise_img = resize_img.copy()
 
             # Searching block2
@@ -147,7 +146,7 @@ class ArvalClassicDocumentAnalyzer:
 
             output_temp_file = output_tmp_folder / 'block_4.jpeg'
             block4 = get_block4_rectangle(copy_of_rezise_im, output_temp_file, block2, bottom_rect,
-                                         self.template_path_top_block4, plot_img=True)
+                                         self.template_path_top_block4, plot_img=False)
 
             copy_of_rezise_im = resize_img.copy()
             draw_rectangles_and_save(copy_of_rezise_im, [block2, block4], output_temp_file)
