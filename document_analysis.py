@@ -29,7 +29,7 @@ class ArvalClassicDocumentAnalyzer:
         self.path_to_document = path_to_document
         self.results = {}  # To be filled with results of analysis
         self.folder_path = Path(self.path_to_document).parent  # Folder where the file is
-        self.tmp_folder_path = self.folder_path / "tmp"  # Folder where we'll store the blocks
+        self.tmp_folder_path = self.folder_path / "tmp" / self.document_name.split(".")[0] # Folder where we'll store the blocks
         self.hyperparameters = hyperparameters
         self.cropped_by_sam = False
         self.block_4_info_path = None
@@ -60,8 +60,7 @@ class ArvalClassicDocumentAnalyzer:
         missing_files = []
 
         for i in filenames:
-            cropped_image_path = os.path.join(self.tmp_folder_path,
-                                              f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg")
+            cropped_image_path = os.path.join(self.tmp_folder_path,i)
 
             if os.path.exists(cropped_image_path):
                 block_doc.append(cropped_image_path)
@@ -74,17 +73,16 @@ class ArvalClassicDocumentAnalyzer:
         else:
             return False
 
-    def read_block_2_and_4_path(self):
+    def read_block_2_and_4_path(self,filenames):
         """
         Create the block 2 and 4 path attributes
         """
         cropped_image_paths = []
-        for i in range(2):
-            cropped_image_paths.append(self.tmp_folder_path / f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg")
+        for image in filenames:
+            cropped_image_paths.append(self.tmp_folder_path / image)
 
         self.file_path_block2 = str(cropped_image_paths[0])
         self.file_path_block4 = str(cropped_image_paths[1])
-
 
     def read_block2_subdivised_path(self):
         """
@@ -93,17 +91,17 @@ class ArvalClassicDocumentAnalyzer:
         file_name = ['block_2_info', 'block_2_sign']
 
         for file_name in file_name:
-            path = os.path.join(self.tmp_folder_path, f"{os.path.splitext(self.document_name)[0]}_{file_name}.jpeg")
+            path = os.path.join(self.tmp_folder_path, f"{file_name}.jpeg")
             setattr(self, f"{file_name}_path", path)
 
     def read_block4_subdivised_path(self):
         """
         Create the block 4 subddivision path attributes
         """
-        file_name = ['block_4_info', 'block_4_sign']
+        file_name = ['block_4_info.jpeg', 'block_4_sign.jpeg']
 
         for file_name in file_name:
-            path = self.tmp_folder_path / f"{os.path.splitext(self.document_name)[0]}_{file_name}.jpeg"
+            path = self.tmp_folder_path / f"{file_name}.jpeg"
             setattr(self, f"{file_name}_path", path)
 
 
@@ -111,12 +109,11 @@ class ArvalClassicDocumentAnalyzer:
         """
         Divide the arval_classic_restitution type document in 4 parts and save them in self.tmp_folder_path.
         """
-        document_name_no_ext = self.document_name.split(".")[0]
-        output_tmp_folder = self.tmp_folder_path / document_name_no_ext
+
         try:
             # Temporary file:
             logger.info("Using SAM to crop image...")
-            output_temp_file_sam = sam_pre_template_matching_function(self.path_to_document, output_tmp_folder, plot_option=False)
+            output_temp_file_sam = sam_pre_template_matching_function(self.path_to_document, self.tmp_folder_path, plot_option=False)
             self.cropped_by_sam = True
         except Exception as e:
             logger.error(f"An error occurred trying to use SAM for the document {self.document_name}:{e}")
@@ -133,21 +130,21 @@ class ArvalClassicDocumentAnalyzer:
             copy_of_rezise_img = resize_img.copy()
 
             # Finding the bottom and the top of the document :
-            top_rect, bottom_rect = find_top_and_bot_of_arval_classic_restitution(copy_of_rezise_img, output_tmp_folder,
+            top_rect, bottom_rect = find_top_and_bot_of_arval_classic_restitution(copy_of_rezise_img, self.tmp_folder_path,
                                                                                   self.template_path_top_block1,
                                                                                   self.template_path_bot_block4,
-                                                                                  plot_img=True)
+                                                                                  plot_img=False)
             copy_of_rezise_img = resize_img.copy()
 
             # Searching block2
             logger.info("Getting blocks 2...")
-            output_temp_file = output_tmp_folder / 'block_2.jpeg'
+            output_temp_file = self.tmp_folder_path / 'block_2.jpeg'
             block2 = get_block2_rectangle(copy_of_rezise_img, output_temp_file, top_rect, bottom_rect,
-                                         self.template_path_top_block2, self.template_path_top_block3, plot_img=True)
+                                         self.template_path_top_block2, self.template_path_top_block3, plot_img=False)
             logger.info("Getting blocks 4...")
             copy_of_rezise_im = resize_img.copy()
 
-            output_temp_file = output_tmp_folder / 'block_4.jpeg'
+            output_temp_file = self.tmp_folder_path / 'block_4.jpeg'
             block4 = get_block4_rectangle(copy_of_rezise_im, output_temp_file, block2, bottom_rect,
                                          self.template_path_top_block4, plot_img=False)
 
@@ -169,10 +166,11 @@ class ArvalClassicDocumentAnalyzer:
                                  self.tmp_folder_path,
                                  self.document_name)
             cropped_image_paths = [os.path.join(self.tmp_folder_path,
-                                                f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg")
+                                                f"{os.path.splitext(self.document_name)[0]}_block_{i}.jpeg")
                                    for i in range(len(blocks))]
             self.file_path_block2 = str(cropped_image_paths[0])
             self.file_path_block4 = str(cropped_image_paths[1])
+
 
         except Exception as e:
             logger.error(f"An error occurred trying to crop the image {self.document_name}:{e}")
@@ -205,17 +203,20 @@ class ArvalClassicDocumentAnalyzer:
         Get the blocks: Create them if they don't exist or just retrieve them if they're already in self.tmp_folder_path
         """
         logger.info(f'Getting blocks...')
+        blocks = []
+        for i in range(2):
+            blocks.append(f"{os.path.splitext(self.document_name)[0]}_block_{i}.jpeg")
 
-        if self.test_blocks_existence(filenames= ['block_2_info', 'block_2_sign', 'block_4_info', 'block_4_sign']): # 2 & 4
+        if self.test_blocks_existence(filenames= blocks): # 2 & 4
             logger.info(f'Blocks 2 and 4 already in tmp folder')
-            self.read_block_2_and_4_path()
-            if self.test_blocks_existence(filenames=['block_2_info', 'block_2_sign']): # 2 only
+            self.read_block_2_and_4_path(filenames=blocks)
+            if self.test_blocks_existence(filenames=['block_2_info.jpeg', 'block_2_sign.jpeg']): # 2 only
                 logger.info(f'Blocks 2 subdivisions already in tmp folder')
                 self.read_block2_subdivised_path()
             else :
                 self.subdivising_and_cropping_block2()
 
-            if self.test_blocks_existence(filenames=['block_4_info', 'block_4_sign']): # 4 only
+            if self.test_blocks_existence(filenames=['block_4_info.jpeg', 'block_4_sign.jpeg']): # 4 only
                 logger.info(f'Blocks 4 subdivisions already in tmp folder')
                 self.read_block4_subdivised_path()
             else :

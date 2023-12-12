@@ -125,19 +125,49 @@ files_to_test = all_documents.keys()
 
 failing_file_explained = ['EM-272-VS_Document_p1.jpeg' # Un doigt bloque la reconnaissance d'un des templates
                  ]
-working_files = pd.read_csv('results/full_result_analysis_20231208_192447.csv')['document_name'].tolist()
+working_files = pd.read_csv('results/full_result_analysis.csv')['document_name'].tolist()
 working_files += ["EN-869-YH_Pvreprise_p1.jpeg",
                   'EC-609-NN_PVR.jpeg',
                   'ET-679-SV_PVrestitutionArval.jpeg']
 files_to_exclude = [] + working_files + failing_file_explained
 
-files_to_exclude = []
+files_to_exclude = ["EC-609-NN_PVR.jpeg",
+"ED-913-BL_pv_de_restitution__p1.jpeg",
+"EK-486-ML_PV_de_reprise_p1.jpeg",
+"EN-869-YH_Pv_reprise_p1.jpeg",
+"EM-272-VS_Document_p1.jpeg",
+"EP-225-MR_DocumentPV_p1.jpeg",
+"EP-225-MR_pv_final_desole_p1.jpeg",
+"EQ-431-AP_pv_de_restitution_arval_X1__p1.jpeg",
+"ES-337-RE_PVR.jpeg"	
+"ET-679-SV_PVrestitutionArval.jpeg",
+"EY-148-HE_DocumentPv_de_restitution_p1.jpeg",
+"EZ-542-KH_pv_reprise.jpeg",
+"EZ-561-VR_PVARVAL.jpeg",
+"FA-463-MX_pv_de_restitution__p1.jpeg",
+"FA-772-LB_Pv.jpeg",
+"FC-006-LG_Document_p1.jpeg",
+"FC-080-PV_PV_de_reprise_p1.jpeg",
+"FC-006-LG_Pv_arval_p1.jpeg",
+"FC-080-PV_PVdereprise_p1.jpeg",
+"FD-909-QB_pv_restitution__p1.jpeg",
+"FF-404-LL_Pv_de_restitution.jpeg",
+"FF-443-DA_PV_de_reprise_p1.jpeg",
+"FG-018-EB_PVR_p1.jpeg",
+"FG-882-EW_PV.jpeg",
+"FG-926-HK_PV_de_restitution_final_ARVAL_de_FG-926-HK__p1.jpeg",
+"FH-639-SE_Pvrestitution.jpeg",
+"FH-681-LZ_ARVAL_Service_Lease_-_PV_restitution_p1.jpeg",
+"FJ-068-NV_PV_de_reprise_p1.jpeg",
+"EH-082-TV_PVderestitution.jpeg"]
+
+
 files_to_iterate = {file: all_documents[file]
                     for file in sorted(files_to_test)[:50]
                     if file not in files_to_exclude}.items()
 
 for name, info in tqdm(files_to_iterate):
-
+    print(name)
     try:
         if WITH_GPT:
             document_analyzer = ArvalClassicGPTDocumentAnalyzer(name, info['path'], hyperparameters)
@@ -177,7 +207,7 @@ for name, info in tqdm(files_to_iterate):
                    }, index=[0])
                    ])
         logger.error(f"Error {e} while analyzing {name}")
-
+    break
 
 dt = datetime.now().strftime("%Y%m%d_%H%M%S")
 full_result_analysis.to_csv(f'results/full_result_analysis_{dt}.csv', index=False)

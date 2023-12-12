@@ -382,7 +382,7 @@ def crop_blocks_in_image(image, blocks, output_dir, input_filename):
     for i, block in enumerate(blocks):
         (x1, y1), (x2, y2) = block
         cropped_image = image[y1:y2, x1:x2]
-        output_filename = f"{base_filename}_{i}.jpeg"
+        output_filename = f"{base_filename}_block_{i}.jpeg"
         logger.info(f"Saving cropped image to {output_dir}/{output_filename}")
         if len(cropped_image) == 0:
             logger.warning(f"Empty image detected. Skipping {output_filename}")
@@ -715,8 +715,7 @@ def divide_and_fill_image3_5(image_path, output_image_path, plot_img=False):
 #Dividing bloc 2:
 def arval_classic_divide_and_crop_block2(file_path_block2, output_fold, file_name, template_path_signature_block2) :
 
-        subfolder = output_fold / os.path.splitext(file_name)[0]
-        output_tmp_image_save = subfolder / "tmp_dividing_block4.jpg"
+        output_tmp_image_save = output_fold / "tmp_dividing_block4.jpg"
         divide_and_fill_image3_5(file_path_block2, output_tmp_image_save, plot_img=False)
         scales = np.linspace(0.26, 1.3, 20)
         output_image_path, match_quality, scale, list_coord_signa_block2 = multi_scale_template_matching(output_tmp_image_save,
@@ -726,8 +725,8 @@ def arval_classic_divide_and_crop_block2(file_path_block2, output_fold, file_nam
         block_2_info, block_2_sign = crop_image_around_reference(file_path_block2, list_coord_signa_block2)
         
         # If you want to save the cropped images
-        block_2_info_path = subfolder / "block_2_info.jpeg"
-        block_2_sign_path = subfolder / "block_2_sign.jpeg"
+        block_2_info_path = output_fold / "block_2_info.jpeg"
+        block_2_sign_path = output_fold / "block_2_sign.jpeg"
         
         cv2.imwrite(block_2_info_path.as_posix(), block_2_info)
         cv2.imwrite(block_2_sign_path.as_posix(), block_2_sign)
@@ -763,8 +762,7 @@ def divide_and_fill_image_1_3(image_path, output_image_path, plot_img=False):
     image.save(output_image_path)
 
 def arval_classic_divide_and_crop_block4(file_path_block4, output_fold, file_name, template_path_signature_block4) :
-        subfolder = output_fold / os.path.splitext(file_name)[0]
-        output_tmp_image_save = subfolder / "tmp_dividing_block4.jpg"
+        output_tmp_image_save = output_fold / "tmp_dividing_block4.jpg"
         divide_and_fill_image_1_3(file_path_block4, output_tmp_image_save, plot_img=False)
         scales = np.linspace(0.26, 1.3, 20)
         output_image_path, match_quality, scale, list_coord_signa_block4 = multi_scale_template_matching(output_tmp_image_save,
@@ -775,8 +773,8 @@ def arval_classic_divide_and_crop_block4(file_path_block4, output_fold, file_nam
         block_4_info, block_4_sign = crop_image_around_reference2(file_path_block4, list_coord_signa_block4)
         
         # If you want to save the cropped images
-        block_4_info_path = subfolder / "block_4_info.jpeg"
-        block_4_sign_path = subfolder / "block_4_sign.jpeg"
+        block_4_info_path = output_fold / "block_4_info.jpeg"
+        block_4_sign_path = output_fold / "block_4_sign.jpeg"
         
         cv2.imwrite(block_4_info_path.as_posix(), block_4_info)
         cv2.imwrite(block_4_sign_path.as_posix(), block_4_sign)
