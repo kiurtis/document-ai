@@ -18,7 +18,7 @@ from sam import sam_pre_template_matching_function
 from pipeline import get_processed_boxes_and_words,postprocess_boxes_and_words_arval_classic_restitution
 from document_parsing import find_next_right_word
 from image_processing import get_image_orientation, rotate_image
-from gpt import build_block_checking_payload, request_completion, build_overall_quality_checking_payload, build_signature_checking_payload
+from gpt import build_block_checking_payload, request_completion, build_overall_quality_checking_payload, build_signature_checking_payload,number_plate_check_gpt
 from plotting import plot_boxes_with_text
 from performance_estimation import has_found_box
 
@@ -406,6 +406,19 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         response = request_completion(payload)
         self.result_json_block_2 = json.loads(response["choices"][0]['message']['content'])
 
+
+        #Litle gpt hack for number_plate
+        plate_number = self.document_name.split('_')[0]
+        response2 = request_completion(number_plate_check_gpt(plate_number, block2_text_image_path))
+
+        plate_number_GPT = response2["choices"][0]['message']['content']
+
+        logger.info(f'Old plate number :')
+        logger.info(f'{self.result_json_block_2["Immatriculé"]}')
+        self.result_json_block_2["Immatriculé"] = plate_number_GPT
+        logger.info(f'plate_number_GPT')
+        logger.info(f'{self.result_json_block_2["Immatriculé"]}')
+
     def assess_overall_quality(self):
         payload = build_overall_quality_checking_payload(image_path=self.path_to_document)
         response = request_completion(payload)
@@ -440,3 +453,4 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         self.results['overall_quality'] = self.overall_quality
         self.results['signature_and_stamp_block_2'] = self.signature_and_stamp_2
         self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_4
+

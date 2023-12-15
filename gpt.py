@@ -56,6 +56,29 @@ def build_block_checking_payload(keys, image_path):
 
     return payload
 
+
+def number_plate_check_gpt(plate_number, image_path):
+
+    # Read and encode the image in base64 format
+    base64_image = encode_image(image_path)
+
+    # Construct the content:
+    content = [{"type": "text", "text": f'Can you read "{plate_number}" on the image file after the word "Immatriculé"? '
+                                        f'If yes return "{plate_number}",if something is writen after "Immatriculé" but different, return this word'
+                                        f'Finally if there nothing after the word "Immatriculé" return "<EMPTY>".'}]
+    #Insist on the fact that I don't want a phrase
+    # Add the image part
+    content.append({
+        "type": "image_url",
+        "image_url": {
+            "url": f"data:image/jpeg;base64,{base64_image}"
+        }
+    })
+
+    payload = set_payload_content(content)
+
+    return payload
+
 def build_overall_quality_checking_payload(image_path):
     # Read and encode the image in base64 format
     base64_image = encode_image(image_path)

@@ -243,7 +243,7 @@ for name, info in tqdm(files_to_iterate):
                    }, index=[0])
                    ])
         logger.error(f"Error {e} while analyzing {name}")
-    break
+
 
 dt = datetime.now().strftime("%Y%m%d_%H%M%S")
 full_result_analysis.to_csv(f'results/full_result_analysis_{dt}.csv', index=False)
