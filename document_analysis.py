@@ -32,10 +32,6 @@ class ArvalClassicDocumentAnalyzer:
         self.tmp_folder_path = self.folder_path / "tmp" / self.document_name.split(".")[0] # Folder where we'll store the blocks
         self.hyperparameters = hyperparameters
         self.cropped_by_sam = False
-        self.block_4_info_path = None
-        self.block_4_sign_path = None
-        self.block_2_info_path = None
-        self.block_2_sign_path = None
 
         # Templates used to process the template matching
         template_folder = Path('data/performances_data/template/arval_classic_restitution')
@@ -98,7 +94,7 @@ class ArvalClassicDocumentAnalyzer:
         """
         Create the block 4 subddivision path attributes
         """
-        file_name = ['block_4_info.jpeg', 'block_4_sign.jpeg']
+        file_name = ['block_4_info', 'block_4_sign']
 
         for file_name in file_name:
             path = self.tmp_folder_path / f"{file_name}.jpeg"
@@ -380,6 +376,8 @@ class ArvalClassicDocumentAnalyzer:
 class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
     def analyze_block4_text(self,block4_text_image_path, verbose=False, plot_boxes=False):
+        logger.info(f'Analyzing block 4 text...')
+        logger.info(f'{block4_text_image_path}')
         if plot_boxes:
             image = PIL.Image.open(block4_text_image_path)
             plt.figure(figsize=(15, 15))
@@ -393,6 +391,8 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         self.result_json_block_4 = json.loads(response["choices"][0]['message']['content'])
 
     def analyze_block2_text(self,block2_text_image_path, verbose=False, plot_boxes=False):
+        logger.info(f'Analyzing block 2 text...')
+        logger.info(f'{block2_text_image_path}')
         # self.block_2_info_path = "/Users/amielsitruk/work/terra_cognita/customers/pop_valet/ai_documents/data/performances_data/valid_data/fleet_services_images/DM-984-VT_Proces_verbal_de_restitution_page-0001/blocks/DM-984-VT_Proces_verbal_de_restitution_page-0001_block 2.png"
         if plot_boxes:
             image = PIL.Image.open(block2_text_image_path)
@@ -417,6 +417,7 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
             self.overall_quality = response["choices"][0]['message']['content']
     def analyze_block2_signature_and_stamp(self,block_2_sign_path):
         logger.info(f'Analyzing block 2 signature and stamp...')
+        logger.info(f'{block_2_sign_path}')
         payload = build_signature_checking_payload(image_path=block_2_sign_path)
         response = request_completion(payload)
         if 'error' in response.keys():
@@ -425,8 +426,8 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         else:
             self.signature_and_stamp_2 = response["choices"][0]['message']['content']
     def analyze_block4_signature_and_stamp(self,block_4_sign_path):
-        logger.info(f'Analyzing block 2 signature and stamp...')
-
+        logger.info(f'Analyzing block 4 signature and stamp...')
+        logger.info(f'{block_4_sign_path}')
         payload = build_signature_checking_payload(image_path=block_4_sign_path)
         response = request_completion(payload)
         if 'error' in response.keys():

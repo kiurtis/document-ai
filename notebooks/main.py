@@ -38,8 +38,8 @@ invalid_restitutions_infos['formatted_filename'] = invalid_restitutions_infos['f
 #Getting all the documents path and name
 image_extensions = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.bmp']
 all_documents = {}
-for status in [#'valid',
-               'invalid'
+for status in ['valid'#,
+               #'invalid'
                ]:
     image_directory = Path(f'data/performances_data/{status}_data/arval_classic_restitution_images/')
     image_files = os.listdir(image_directory)
@@ -159,14 +159,50 @@ files_to_exclude = ["EC-609-NN_PVR.jpeg",
 "FH-639-SE_Pvrestitution.jpeg",
 "FH-681-LZ_ARVAL_Service_Lease_-_PV_restitution_p1.jpeg",
 "FJ-068-NV_PV_de_reprise_p1.jpeg",
-"EH-082-TV_PVderestitution.jpeg"]
+"ET-679-SV_PVrestitutionArval.jpeg",
+"EZ-912-QS_PV_de_reprise_p2.jpeg",
+"EN-869-YH_Document_p1.jpeg",
+"EH-082-TV_PVderestitution.jpeg",
+"ES-337-RE_PVR.jpeg",
+"FA-256-WW_PV_de_Restitution_p1.jpeg",
+'FB-568-VP_ARVAL_PV.jpeg',
+'FA-580-FY_Pvderestitution.jpeg',
+'FC-080-PV_PV_de_reprise_p2.jpeg',
+'FF-121-EK_PV_p1.jpeg',
+'FF-173-LL_PV_restitution.jpeg',
+'FF-403-FX_PV_de_reprise_p1.jpeg',
+'FF-495-RB_20230823_101857.jpeg',
+'FF-724-NB_Document_pv_p1.jpeg','FF-724-NB_pV_restitution__p1.jpeg',
+'FG-767-EX_Pvdelivraisonv.jpeg','FJ-234-JT_PV_de_reprise_p1.jpeg',
+'FJ-324-KV_PV_de_reprise_p1.jpeg','FJ-745-XQ_PV_de_reprise_p1.jpeg','FK-184-AJ_PV_de_restitution.png','FK-468-LV_PV_de_reprise_p1.jpeg',
+'FL-115-PN_Pv_de_restitution_p1.jpeg','FL-147-SN_Pvarval.jpeg','FL-354-QG_PV_de_reprise_p1.jpeg']
 
+files_to_exclude = [
+'DH-427-VH_PV_RESTITUTION_DH-427-VH_p1.jpeg',
+'DY-984-XY_PV_de_reprise_p2.jpeg',
+'ED-008-XZ_PV_de_reprise_ed-008-xz_p1.jpeg',
+'EF-714-CW_PV_Restitution_Arval.jpeg',
+'EF-988-TA_procès_restitution_p1.jpeg',
+'EH-626-ND_PV_de_reprise_p1.jpeg',
+'EK-112-NP_proces_verbal_de_restitution_definitve_arval_p1.jpeg',
+'EK-531-NX_EK-531-NX_-_PV_DE_RESTITUTION_p1.jpeg',
+'EK-744-NX_EK-744-NX_procès_verbal_de_restitution_définitive_Arval_exemplaire_PUBLIC_LLD_p1.jpeg',
+'EK-744-NX_EK-744-NX_procès_verbal_de_restitution_définitive_Arval_exemplaire_locataire client_p1.jpeg',
+'EL-235-PN_PV_de_restitution__p1.jpeg',
+'EL-935-PX_EL-935-PX_Pv_de_restitution_p1.jpeg',
+'EQ-807-SZ_PV_de_reprise_EQ-807-SZ_p1.jpeg',
+'ER-371-VZ_PV_Resti_3008-08_p1.jpeg'
+]
+
+files_to_exclude = []
 
 files_to_iterate = {file: all_documents[file]
                     for file in sorted(files_to_test)[:50]
                     if file not in files_to_exclude}.items()
 
+
 for name, info in tqdm(files_to_iterate):
+    print('   ')
     print(name)
     try:
         if WITH_GPT:
