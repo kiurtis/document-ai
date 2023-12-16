@@ -94,7 +94,9 @@ def detect_page(img_path, sam_model=mask_generator_2, plot_option=False):
 
         cropped_image = image_bgr[int(bbox[1]):int(bbox[1]) + int(bbox[3]), int(bbox[0]):int(bbox[0]) + int(bbox[2])]
         height_c, width_c, channels = cropped_image.shape
-        logger.info('width/height ratio after SAM cropping : {width_c}/ {height_c} ')
+
+        logger.info(f'width/height ratio after SAM cropping : {width_c / height_c}')
+
         if plot_option:
             sv.plot_images_grid(
                 images=[image_bgr, annotated_image, cropped_image],
@@ -104,6 +106,12 @@ def detect_page(img_path, sam_model=mask_generator_2, plot_option=False):
         return cropped_image
 
 def rotate_image_if_needed(image_path, output_path):
+    """
+    Rotate the image if the width/height ratio is not between 0.65 and 0.85.
+    :param image_path:
+    :param output_path:
+    :return: True if the image was rotated, False otherwise
+    """
     # Load the image
     original_image = Image.open(image_path)
 
@@ -114,10 +122,14 @@ def rotate_image_if_needed(image_path, output_path):
     if not (ratio <= 0.85):
         rotated_image = original_image.rotate(90, expand=True)
         rotated_image.save(output_path)
-        return "Image rotated and saved to " + str(output_path)
+
+        logger.info(f"Image rotated and saved to {output_path}")
+        return True
+
     else:
         original_image.save(output_path)
-        return "No rotation needed."
+        logger.info(f"Image saved to {output_path}")
+        return False
 
 def is_upside_down(image_path):
     # Load the image
@@ -152,10 +164,10 @@ def sam_pre_template_matching_function(img_path, output_folder, plot_option=Fals
     cv2.imwrite(output_path.as_posix(), image)
 
     # Rotating
-    rotate_image_if_needed(output_path, output_path)
+    rotated = rotate_image_if_needed(output_path, output_path)
 
     # Test if the rotation was correct or flip it by 180°
-    if is_upside_down(output_path):
+    if rotated and is_upside_down(output_path):
         # Rotate the image 180 degrees
         output_path = rotate_image(output_path, 180, output_path)
         logger.info(f"Image was upside down and has been rotated. Saved to {output_path}")

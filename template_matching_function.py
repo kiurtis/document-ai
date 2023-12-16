@@ -7,6 +7,14 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
+from segment_anything import sam_model_registry, SamPredictor,SamAutomaticMaskGenerator
+import supervision as sv
+import torch
+import matplotlib.pyplot as plt
+import pytesseract
+from pytesseract import Output
+
+
 load_dotenv(find_dotenv())
 PLOT_MATCHED_BLOCKS = os.environ.get('PLOT_MATCHED_BLOCKS')
 
@@ -190,6 +198,7 @@ def resize_arval_classic(original_image_path, plot_image=False):
     return resized_image
 
 def isolate_code_bar_part_arval_classic(image, output_image_path, plot_img=False):
+
     # Prepare to draw on the image
     draw = ImageDraw.Draw(image)
 
@@ -230,6 +239,7 @@ def get_code_bar_position(rezise_im, output_tmp_folder, template_path_bot_block4
 
 
 def isolate_logo_part_arval_classic(image, output_image_path, plot_img=False):
+
     # Prepare to draw on the image
     draw = ImageDraw.Draw(image)
 
@@ -267,7 +277,7 @@ def get_top_bloc_position(resize_img, output_tmp_folder, template_path_top_block
     scales = np.linspace(0.26, 1.3, 20)
     output_image_path, best_match_quality, best_scale, best_match_coordinates = multi_scale_template_matching(output_temp_file, template_path_top_block1, scales, plot_img=plot_img)
     return best_match_coordinates
-
+  
 def find_top_and_bot_of_arval_classic_restitution(resize_img, output_tmp_folder, template_path_top_block1,
                                                   template_path_bot_block4, plot_img=False):
     copy_of_resize_img = resize_img.copy()
@@ -277,6 +287,7 @@ def find_top_and_bot_of_arval_classic_restitution(resize_img, output_tmp_folder,
 
     if plot_img:
         draw = ImageDraw.Draw(resize_img)
+
 
         # Draw rectangles
         for (top_left, bottom_right) in [top_rect, bottom_rect]:
@@ -425,9 +436,8 @@ def crop_image_around_reference2(image_path, reference_rect):
 
     return left_crop, right_crop
 
-
-
 def isolate_top_bloc2(image, output_image_path, top_rect, bottom_rect, plot_img=False):
+
     # Prepare to draw on the image
     draw = ImageDraw.Draw(image)
 
@@ -479,13 +489,16 @@ def isolate_top_bloc2(image, output_image_path, top_rect, bottom_rect, plot_img=
     image.save(output_image_path)
 
 def get_top_bloc_2_position(rezise_im, output_temp_file, top_rect, bottom_rect, template_path_top_block2, plot_img=False):
+    
     isolate_top_bloc2(rezise_im, output_temp_file, top_rect, bottom_rect, plot_img=plot_img)
     scales = np.linspace(0.26, 1.3, 20)
     output_image_path, best_match_quality, best_scale, best_match_coordinates = multi_scale_template_matching(output_temp_file, template_path_top_block2, scales, plot_img=plot_img)
     return best_match_coordinates
 
 
+
 def isolate_top_bloc3(image, output_image_path, top_rect, bottom_rect, plot_img=False):
+  
     # Prepare to draw on the image
     draw = ImageDraw.Draw(image)
 
@@ -537,10 +550,12 @@ def isolate_top_bloc3(image, output_image_path, top_rect, bottom_rect, plot_img=
     image.save(output_image_path)
 
 def get_top_bloc_3_position(rezise_im, output_temp_file, top_rect, bottom_rect, template_path_top_block3, plot_img=False):
+
     isolate_top_bloc3(rezise_im, output_temp_file, top_rect, bottom_rect, plot_img=plot_img)
     scales = np.linspace(0.26, 1.3, 20)
     output_image_path, best_match_quality, best_scale, best_match_coordinates = multi_scale_template_matching(output_temp_file, template_path_top_block3, scales, plot_img=plot_img)
     return best_match_coordinates
+
 
 def get_block2_rectangle(rezise_im, output_temp_file, top_rect, bottom_rect, template_path_top_block2, template_path_top_block3, plot_img=False):
     folder = Path(output_temp_file).parent
@@ -577,10 +592,8 @@ def get_block2_rectangle(rezise_im, output_temp_file, top_rect, bottom_rect, tem
         rezise_im.save(outputsave)
     return (0, top_y), (width, bottom_y)
 
-
-
-
 def isolate_top_bloc4(image, output_image_path, top_rect, bottom_rect, plot_img=False):
+
     # Prepare to draw on the image
     draw = ImageDraw.Draw(image)
 
@@ -632,6 +645,7 @@ def isolate_top_bloc4(image, output_image_path, top_rect, bottom_rect, plot_img=
     image.save(output_image_path)
 
 def get_top_bloc_4_position(rezise_im, output_temp_file, top_rect, bottom_rect, template_path_top_block4, plot_img=False):
+
     isolate_top_bloc4(rezise_im, output_temp_file, top_rect, bottom_rect, plot_img=plot_img)
     scales = np.linspace(0.26, 1.3, 20)
     output_image_path, best_match_quality, best_scale, best_match_coordinates = multi_scale_template_matching(output_temp_file, template_path_top_block4, scales, plot_img=plot_img)
@@ -687,6 +701,7 @@ def draw_rectangles_and_save(image, rectangles, output_path):
 
 
 def divide_and_fill_image3_5(image_path, output_image_path, plot_img=False):
+
     image = Image.open(image_path)
 
     # Get image dimensions
@@ -734,6 +749,7 @@ def arval_classic_divide_and_crop_block2(file_path_block2, output_fold, file_nam
 
 
 def divide_and_fill_image_1_3(image_path, output_image_path, plot_img=False):
+
     image = Image.open(image_path)
 
     # Get image dimensions
@@ -764,6 +780,7 @@ def divide_and_fill_image_1_3(image_path, output_image_path, plot_img=False):
 def arval_classic_divide_and_crop_block4(file_path_block4, output_fold, file_name, template_path_signature_block4) :
         output_tmp_image_save = output_fold / "tmp_dividing_block4.jpg"
         divide_and_fill_image_1_3(file_path_block4, output_tmp_image_save, plot_img=False)
+
         scales = np.linspace(0.26, 1.3, 20)
         output_image_path, match_quality, scale, list_coord_signa_block4 = multi_scale_template_matching(output_tmp_image_save,
                                                                                                          template_path_signature_block4,
@@ -778,5 +795,3 @@ def arval_classic_divide_and_crop_block4(file_path_block4, output_fold, file_nam
         
         cv2.imwrite(block_4_info_path.as_posix(), block_4_info)
         cv2.imwrite(block_4_sign_path.as_posix(), block_4_sign)
-
-        return block_4_info_path, block_4_sign_path
