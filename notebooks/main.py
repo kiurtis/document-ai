@@ -13,6 +13,7 @@
 # ---
 
 # +
+
 import os
 import unicodedata
 from datetime import datetime
@@ -28,25 +29,21 @@ from loguru import logger
 # %load_ext autoreload
 # %autoreload 2
 
-
-
-
-normalize_str = lambda s: ''.join((c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn'))
-
 invalid_restitutions_infos = pd.read_csv('data/links_to_dataset/invalid_restitutions.csv')
 invalid_restitutions_infos['formatted_filename'] = invalid_restitutions_infos['filename'].apply(lambda x: normalize_str(os.path.splitext(x.replace(' ', '_'))[0]))
+
 #Getting all the documents path and name
 image_extensions = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.bmp']
 all_documents = {}
 for status in [#'valid',
-               'invalid'
+            'invalid'
                ]:
     image_directory = Path(f'data/performances_data/{status}_data/arval_classic_restitution_images/')
     image_files = os.listdir(image_directory)
-    image_files = [file_name for file_name in image_files if not file_name.startswith('DR-269-QA')] # I don't know why this file is here, it is not in the invalid_restitutions.csv
 
     # Iterate over each image and perform the operations
     for file_name in image_files:
+
         try:
             # Check if the file is an image
             if any(file_name.lower().endswith(ext) for ext in image_extensions):
@@ -90,6 +87,7 @@ hyperparameters = {'det_arch': "db_resnet50",
 full_result_analysis = pd.DataFrame(columns=['document_name', 'true_status', 'predicted_status', 'true_cause', 'predicted_cause'])
 #for name, info in all_documents.items():
 
+
 WITH_GPT = True
 
 bad_orientation_file = ["EC-609-NN_PVR.jpeg",
@@ -128,17 +126,14 @@ files_to_iterate = {file: all_documents[file]
 
 for name, info in tqdm(files_to_iterate):
 
-    try:
-        if WITH_GPT:
-            document_analyzer = ArvalClassicGPTDocumentAnalyzer(name, info['path'], hyperparameters)
-        else:
-            document_analyzer = ArvalClassicDocumentAnalyzer(name, info['path'], hyperparameters)
-        document_analyzer.analyze()
-        document_analyzer.save_results()
-        #document_analyzer.plot_blocks()
 
+    try:
+        document_analyzer = ArvalClassicDocumentAnalyzer(name, info['path'], hyperparameters)
+        document_analyzer.analyze()
+        #document_analyzer.plot_blocks()
         logger.info(f"Result: {document_analyzer.results}")
 
+ 
         result_validator = ResultValidator(document_analyzer.results, plate_number=info['plate_number'])
         result_validator.validate()
 
@@ -153,6 +148,7 @@ for name, info in tqdm(files_to_iterate):
             'error':[None]
             }, index=[0])
             ])
+        i += 1
     except Exception as e:
         raise e
         pd.concat([full_result_analysis,
@@ -173,7 +169,6 @@ dt = datetime.now().strftime("%Y%m%d_%H%M%S")
 full_result_analysis.to_csv(f'results/full_result_analysis_{dt}.csv', index=False)
 
 files_iterable = {file: all_documents[file] for file in files_to_test}.items()
-
 
 # Typologie d'erreur
 # - Could not find block 2
