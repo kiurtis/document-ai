@@ -41,7 +41,7 @@ def build_block_checking_payload(keys, image_path):
     dict_instruction = 'Give the answer as a dictionary with the keys ' + \
                        ', '.join([f'"{key}"' for key in keys]) + \
                        ' and the corresponding values. Dont write anything else. If you dont find a key on the image, set the value to "<NOT_FOUND>".' \
-                       'If you find the key but no value is associated, set the value to "<EMPTY>".'
+                       'If you find the key but no value is associated, set the value to "<EMPTY>". No other value is accepted.'
     content.append({"type": "text", "text": dict_instruction})
 
     # Add the image part
