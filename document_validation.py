@@ -1,8 +1,9 @@
+from loguru import logger
 from Levenshtein import distance as l_distance
 
 
 class ResultValidator:
-    def __init__(self, results, plate_number):
+    def __init__(self, results, plate_number, valet_name=None):
         # with open(result_json) as f:
         #   self.result = json.load(f)
         self.result = results
@@ -15,6 +16,7 @@ class ResultValidator:
         self.block4_is_filled = True
         self.block4_is_filled_by_company = True
         self.plate_number = plate_number
+        self.valet_name = valet_name
 
     def validate_quality(self):
         self.quality_is_ok = self.result['overall_quality'].lower() == 'yes'
@@ -48,8 +50,11 @@ class ResultValidator:
 
     def validate_block4_is_filled_by_company(self, distance_margin=4):
         company_name = self.result['block_4']['Société']
+        driver_name = self.result['block_4']['Nom et prénom']
         self.block4_is_filled_by_company = company_name not in ["<EMPTY>", "<NOT_FOUND>"] \
                                            and l_distance(company_name, "Pop Valet") > distance_margin
+        if self.valet_name is not None:
+            self.block4_is_filled_by_company = self.block4_is_filled_by_company and (driver_name != self.valet_name)
 
 
     def validate_block4_is_filled(self):
@@ -96,8 +101,7 @@ class ResultValidator:
         self.validate_block4_is_filled_by_company()
         self.gather_refused_motivs()
 
-        print('self.refused_causes')
-        print(self.refused_causes)
+        logger.info(f"Refused causes: {self.refused_causes}")
 
         self.validated = self.stamps_are_ok and self.stamps_are_ok and self.mileage_is_ok and self.number_plate_is_filled and self.number_plate_is_right and self.block4_is_filled and self.block4_is_filled_by_company
         return self.validated

@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 #Importing functions
-from utils import get_result_template, clean_listdir
+from utils import get_result_template, has_non_none_attributes
 from template_matching_function import get_image_dimensions, draw_contour_rectangles_on_image, crop_blocks_in_image, arval_classic_divide_and_crop_block2, arval_classic_divide_and_crop_block4,\
     find_top_and_bot_of_arval_classic_restitution, resize_arval_classic, get_block2_rectangle, get_block4_rectangle, draw_rectangles_and_save
 from sam import sam_pre_template_matching_function
@@ -242,7 +242,7 @@ class ArvalClassicDocumentAnalyzer:
         folder_ground_truths = Path('data/performances_data/valid_data/arval_classic_restitution_json/')
         self.template = get_result_template(folder_ground_truths)
 
-    def analyze_block2_text(self,block2_text_image_path, verbose=False, plot_boxes=False):
+    def analyze_block2_text(self, block2_text_image_path, verbose=False, plot_boxes=False):
 
         self.result_json_block_2 = {}
 
@@ -323,7 +323,7 @@ class ArvalClassicDocumentAnalyzer:
 
     def analyze_block4(self):
         #We check if the block4 is subdvided:
-        if hasattr(self, "block_4_info_path") and hasattr(self, "block_4_sign_path"):
+        if has_non_none_attributes(self, "block_4_info_path", "block_4_sign_path"):
             self.analyze_block4_text(self.block_4_info_path, verbose=False, plot_boxes=False)
             self.analyze_block4_signature_and_stamp(self.block_4_sign_path)
         else:
@@ -332,7 +332,7 @@ class ArvalClassicDocumentAnalyzer:
 
     def analyze_block2(self):
         #We check if the block2 is subdvided:
-        if hasattr(self, "block_2_info_path") and hasattr(self, "block_2_sign_path"):
+        if has_non_none_attributes(self, "block_2_info_path", "block_2_sign_path"):
             self.analyze_block2_text(self.block_2_info_path, verbose=False, plot_boxes=False)
             self.analyze_block2_signature_and_stamp(self.block_2_sign_path)
         else:
