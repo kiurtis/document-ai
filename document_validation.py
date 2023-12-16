@@ -3,7 +3,7 @@ from Levenshtein import distance as l_distance
 
 
 class ResultValidator:
-    def __init__(self, results, plate_number, valet_name=None):
+    def __init__(self, results, plate_number, valet_name=None, is_concessionaire=None):
         # with open(result_json) as f:
         #   self.result = json.load(f)
         self.result = results
@@ -17,6 +17,7 @@ class ResultValidator:
         self.block4_is_filled_by_company = True
         self.plate_number = plate_number
         self.valet_name = valet_name
+        self.is_concessionaire = is_concessionaire
 
     def validate_quality(self):
         self.quality_is_ok = self.result['overall_quality'].lower() == 'yes'
@@ -56,15 +57,16 @@ class ResultValidator:
         if self.valet_name is not None:
             self.block4_is_filled_by_company = self.block4_is_filled_by_company and (driver_name != self.valet_name)
 
-
     def validate_block4_is_filled(self):
-        # TODO: Check how we want to define this function
-        self.block4_is_filled = any(
-            value not in ["<EMPTY>", "<NOT_FOUND>"] for value in self.result['block_4'].values()
-        )
+        name_condition = self.result['block_4']['Nom et prénom'] not in ["<EMPTY>", "<NOT_FOUND>"]
+        coordinates_condition = self.result['block_4']['Tél'] not in ["<EMPTY>", "<NOT_FOUND>"] and \
+                                self.result['block_4']['E-mail'] not in ["<EMPTY>", "<NOT_FOUND>"]
 
-
-
+        if self.is_concessionaire:
+            concessionaire_condition = self.result['block_4']['Société'] not in ["<EMPTY>", "<NOT_FOUND>"]
+        else:
+            concessionaire_condition = True
+        self.block4_is_filled = coordinates_condition and name_condition and concessionaire_condition
 
     def gather_refused_motivs(self):
         # Initialize an empty list to store the names of variables that are False
@@ -103,5 +105,7 @@ class ResultValidator:
 
         logger.info(f"Refused causes: {self.refused_causes}")
 
-        self.validated = self.stamps_are_ok and self.stamps_are_ok and self.mileage_is_ok and self.number_plate_is_filled and self.number_plate_is_right and self.block4_is_filled and self.block4_is_filled_by_company
+        self.validated = self.stamps_are_ok and self.signatures_are_ok and self.mileage_is_ok \
+                         and self.number_plate_is_filled and self.number_plate_is_right and self.block4_is_filled \
+                         and self.block4_is_filled_by_company
         return self.validated
