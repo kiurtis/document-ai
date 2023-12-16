@@ -29,6 +29,7 @@ def set_payload_content(content):
         "max_tokens": 300
     }
     return payload
+
 def build_block_checking_payload(keys, image_path):
 
     # Read and encode the image in base64 format

@@ -41,10 +41,16 @@ class ResultValidator:
             self.signatures_are_ok = False
 
     def validate_mileage(self):
-        self.mileage_is_ok = self.result['block_2']['Kilométrage'].isdigit()
+        self.mileage_is_ok = self.result['block_2']['Kilométrage'] not in ["<EMPTY>", "<NOT_FOUND>"]
+
+    def validate_restitution_date(self):
+        self.restitution_date_is_ok = self.result['block_2']['Restitué le'] not in ["<EMPTY>", "<NOT_FOUND>"]
+
+    def validate_serial_number(self):
+        self.serial_number_is_ok = self.result['block_2']['N° de série'] not in ["<EMPTY>", "<NOT_FOUND>"]
 
     def validate_number_plate_is_filled(self):
-        self.number_plate_is_filled = self.result['block_2']['Immatriculé'] != "<EMPTY>"
+        self.number_plate_is_filled = self.result['block_2']['Immatriculé'] not in ["<EMPTY>", "<NOT_FOUND>"]
 
     def validate_number_plate_is_right(self):
         detected_plate_number = self.result['block_2']['Immatriculé']
@@ -108,5 +114,5 @@ class ResultValidator:
 
         self.validated = self.stamps_are_ok and self.signatures_are_ok and self.mileage_is_ok \
                          and self.number_plate_is_filled and self.number_plate_is_right and self.block4_is_filled \
-                         and self.block4_is_filled_by_company
+                         and self.block4_is_filled_by_company and self.restitution_date_is_ok and self.serial_number_is_ok
         return self.validated
