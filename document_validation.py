@@ -3,7 +3,7 @@ from Levenshtein import distance as l_distance
 
 
 class ResultValidator:
-    def __init__(self, results, plate_number, valet_name=None, is_concessionaire=None):
+    def __init__(self, results, plate_number, valet_name=None, from_concessionaire=None, to_concessionaire=None):
         # with open(result_json) as f:
         #   self.result = json.load(f)
         self.result = results
@@ -17,7 +17,8 @@ class ResultValidator:
         self.block4_is_filled_by_company = True
         self.plate_number = plate_number
         self.valet_name = valet_name
-        self.is_concessionaire = is_concessionaire
+        self.from_concessionaire = from_concessionaire
+        self.to_concessionaire = to_concessionaire
 
     def validate_quality(self):
         self.quality_is_ok = self.result['overall_quality'].lower() == 'yes'
@@ -26,15 +27,15 @@ class ResultValidator:
         signature_block_4 = self.result['signature_and_stamp_block_4'] in ('both', 'signature')
 
         if signature_block_2 and signature_block_4:
-            self.stamps_are_ok = True
+            self.signatures_are_ok = True
         else:
-            self.stamps_are_ok = False
+            self.signatures_are_ok = False
 
     def validate_stamps(self):
-        stamp_block_2 = self.result['signature_and_stamp_block_2'] in ('both', 'signature')
-        stamp_block_4 = self.result['signature_and_stamp_block_4'] in ('both', 'signature')
+        stamp_block_2_condition = self.result['signature_and_stamp_block_2'] in ('both', 'stamp') or (not self.from_concessionaire) # If not from concessionaire, no stamp needed
+        stamp_block_4_condition = self.result['signature_and_stamp_block_4'] in ('both', 'stamp') or (not self.to_concessionaire) # If not to concessionaire, no stamp needed
 
-        if stamp_block_2 and stamp_block_4:
+        if stamp_block_2_condition and stamp_block_4_condition:
             self.signatures_are_ok = True
         else:
             self.signatures_are_ok = False
@@ -62,7 +63,7 @@ class ResultValidator:
         coordinates_condition = self.result['block_4']['Tél'] not in ["<EMPTY>", "<NOT_FOUND>"] and \
                                 self.result['block_4']['E-mail'] not in ["<EMPTY>", "<NOT_FOUND>"]
 
-        if self.is_concessionaire:
+        if self.to_concessionaire:
             concessionaire_condition = self.result['block_4']['Société'] not in ["<EMPTY>", "<NOT_FOUND>"]
         else:
             concessionaire_condition = True
