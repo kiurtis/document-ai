@@ -379,6 +379,23 @@ class ArvalClassicDocumentAnalyzer:
 
 class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
+    @staticmethod
+    def safe_process_response(response, attribute):
+        if 'error' not in response.keys():
+            try:
+                content = response["choices"][0]['message']['content']
+                try:
+                    content = json.loads(content)
+                except:
+                    pass  # content is already a string
+                return content
+            except Exception as e:
+                logger.warning(f'Could not process {attribute} response: {e}')
+                return None
+        else:
+            logger.warning(f'Could not process {attribute} response: {response["error"]["code"]}')
+            return None
+
     def analyze_block4_text(self,block4_text_image_path, verbose=False, plot_boxes=False):
         if plot_boxes:
             image = PIL.Image.open(block4_text_image_path)
@@ -390,7 +407,13 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
                                                image_path=block4_text_image_path)
 
         response = request_completion(payload)
-        self.result_json_block_4 = json.loads(response["choices"][0]['message']['content'])
+        self.result_json_block_4 = self.safe_process_response(response, 'result_json_block_4')
+        if self.result_json_block_4 is None:
+            self.result_json_block_4 = {'block_4': {'Nom et prénom': '<NOT_FOUND>',
+                                                    'E-mail': '<NOT_FOUND>',
+                                                    'Tél': '<NOT_FOUND>',
+                                                    'le': '<NOT_FOUND>',
+                                                    'Société': '<NOT_FOUND>'}}
 
     def analyze_block2_text(self,block2_text_image_path, verbose=False, plot_boxes=False):
         # self.block_2_info_path = "/Users/amielsitruk/work/terra_cognita/customers/pop_valet/ai_documents/data/performances_data/valid_data/fleet_services_images/DM-984-VT_Proces_verbal_de_restitution_page-0001/blocks/DM-984-VT_Proces_verbal_de_restitution_page-0001_block 2.png"
@@ -404,38 +427,37 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
 
         response = request_completion(payload)
-        self.result_json_block_2 = json.loads(response["choices"][0]['message']['content'])
+        self.result_json_block_2 = self.safe_process_response(response, 'result_json_block_2')
+        if self.result_json_block_2 is None:
+            self.result_json_block_2 = {'block_2': {"Immatriculé": '<NOT_FOUND>',
+                                                    "Kilométrage": '<NOT_FOUND>',
+                                                    "Restitué le": '<NOT_FOUND>',
+                                                    "Numéro de série": '<NOT_FOUND>',
+                                                    "Modèle": '<NOT_FOUND>',
+                                                    "Couleur": '<NOT_FOUND>'}}
 
     def assess_overall_quality(self):
         payload = build_overall_quality_checking_payload(image_path=self.path_to_document)
         response = request_completion(payload)
 
-        if 'error' in response.keys():
-            self.overall_quality = None
-            logger.warning(f'Overall quality assessment failed: {response["code"]}')
-        else:
-            self.overall_quality = response["choices"][0]['message']['content']
+        self.overall_quality = self.safe_process_response(response, 'overall_quality')
+
     def analyze_block2_signature_and_stamp(self,block_2_sign_path):
         logger.info(f'Analyzing block 2 signature and stamp...')
         payload = build_signature_checking_payload(image_path=block_2_sign_path)
         response = request_completion(payload)
-        if 'error' in response.keys():
-            self.signature_and_stamp_2 = None
-            logger.warning(f'Block 2 signature and stamp assessment failed: {response["code"]}')
-        else:
-            self.signature_and_stamp_2 = response["choices"][0]['message']['content']
+
+        self.signature_and_stamp_block_2 = self.safe_process_response(response, 'signature_and_stamp_2')
+
     def analyze_block4_signature_and_stamp(self,block_4_sign_path):
         logger.info(f'Analyzing block 2 signature and stamp...')
 
         payload = build_signature_checking_payload(image_path=block_4_sign_path)
         response = request_completion(payload)
-        if 'error' in response.keys():
-            self.signature_and_stamp_4 = None
-            logger.warning(f'Block 4 signature and stamp assessment failed: {response["code"]}')
-        else:
-            self.signature_and_stamp_4 = response["choices"][0]['message']['content']
+        self.signature_and_stamp_block_4 = self.safe_process_response(response, 'signature_and_stamp_4')
+
     def analyze(self):
         super().analyze()
         self.results['overall_quality'] = self.overall_quality
-        self.results['signature_and_stamp_block_2'] = self.signature_and_stamp_2
-        self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_4
+        self.results['signature_and_stamp_block_2'] = self.signature_and_stamp_block_2
+        self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_block_4
