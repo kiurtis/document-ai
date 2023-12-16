@@ -22,3 +22,12 @@ def get_result_template(folder_ground_truths):
     for bn in block_names:
         json_template[bn] = sample_json[bn].keys()
     return json_template
+
+def has_non_none_attributes(obj, *attrs):
+    """
+    Check if an object has non-None attributes
+    :param obj:
+    :param attrs:
+    :return:
+    """
+    return all(hasattr(obj, attr) and getattr(obj, attr) is not None for attr in attrs)

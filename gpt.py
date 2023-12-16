@@ -29,6 +29,7 @@ def set_payload_content(content):
         "max_tokens": 300
     }
     return payload
+
 def build_block_checking_payload(keys, image_path):
 
     # Read and encode the image in base64 format
@@ -41,7 +42,7 @@ def build_block_checking_payload(keys, image_path):
     dict_instruction = 'Give the answer as a dictionary with the keys ' + \
                        ', '.join([f'"{key}"' for key in keys]) + \
                        ' and the corresponding values. Dont write anything else. If you dont find a key on the image, set the value to "<NOT_FOUND>".' \
-                       'If you find the key but no value is associated, set the value to "<EMPTY>".'
+                       'If you find the key but no value is associated, set the value to "<EMPTY>". No other value is accepted.'
     content.append({"type": "text", "text": dict_instruction})
 
     # Add the image part
@@ -61,7 +62,10 @@ def build_overall_quality_checking_payload(image_path):
     base64_image = encode_image(image_path)
 
     # Construct the content for each key
-    content = [{"type": "text", "text": f'Is the overall quality of the document good? Anwser only "yes" or "no".'}]
+    content = [{"type": "text", "text": f'Is the overall quality of the document ok? Answer "No" (and nothing else)'
+                                        f'if the document is very creased, poorly lit, very crumpled, poorly framed or '
+                                        f'distorted, otherwise answer "Yes" (and nothing else).'}]
+
 
     # Add the image part
     content.append({
