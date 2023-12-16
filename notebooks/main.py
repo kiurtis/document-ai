@@ -34,7 +34,7 @@ from loguru import logger
 normalize_str = lambda s: ''.join((c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn'))
 
 invalid_restitutions_infos = pd.read_csv('data/links_to_dataset/invalid_restitutions.csv')
-invalid_restitutions_infos['formatted_filename'] = invalid_restitutions_infos['filename'].apply(lambda x: normalize_str(os.path.splitext(x.replace(' ', ''))[0]))
+invalid_restitutions_infos['formatted_filename'] = invalid_restitutions_infos['filename'].apply(lambda x: normalize_str(os.path.splitext(x.replace(' ', '_'))[0]))
 #Getting all the documents path and name
 image_extensions = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.bmp']
 all_documents = {}
@@ -92,17 +92,6 @@ full_result_analysis = pd.DataFrame(columns=['document_name', 'true_status', 'pr
 
 WITH_GPT = True
 
-files_to_test = ['ES-337-RE_PVR.jpeg', # Block 2 is badly detected
-                 'EZ-542-KH_pv_reprise.jpeg', # Block 2 is badly detected, block 4 is not detected
-                 'FB-568-VP_ARVAL_PV.jpeg',
-                 'FF-173-LL_PV_restitution.jpeg', # Blocks 2 and 4 are not detected
-                 'FF-404-LL_Pv_de_restitution.jpeg', # Blocks 2 and 4 are not detected
-                 'FK-184-AJ_PV_de_restitution.png', # Block 2 badly detected and block 4 badly separated
-                 'FS-127-LS_PV_ARVAL.jpeg', # Blocks 2 and 4 are note detected
-                 'GB-587-GR_PV_DE_RESTITUTION_GB-587-GR.jpeg',
-                 'GJ-053-HN_PV_Arval.jpeg' # Blocks 2 and 4 are not detected
-                ]
-
 bad_orientation_file = ["EC-609-NN_PVR.jpeg",
 "EH-082-TV_PVderestitution.jpeg",
 "ET-679-SV_PVrestitutionArval.jpeg",
@@ -123,6 +112,7 @@ bad_orientation_file = ["EC-609-NN_PVR.jpeg",
 
 files_to_test = all_documents.keys()
 
+files_to_test =["FF-495-RB_20230823_101857.jpeg",]
 failing_file_explained = ['EM-272-VS_Document_p1.jpeg' # Un doigt bloque la reconnaissance d'un des templates
                  ]
 working_files = pd.read_csv('results/full_result_analysis_20231208_192447.csv')['document_name'].tolist()
@@ -164,6 +154,7 @@ for name, info in tqdm(files_to_iterate):
             }, index=[0])
             ])
     except Exception as e:
+        raise e
         pd.concat([full_result_analysis,
                    pd.DataFrame({
                        'document_name': [name],
