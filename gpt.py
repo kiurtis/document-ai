@@ -92,9 +92,9 @@ def build_overall_quality_checking_payload(image_path):
     base64_image = encode_image(image_path)
 
     # Construct the content for each key
-    content = [{"type": "text", "text": f'Is the overall quality of the document ok? Answer "No" (and nothing else)'
-                                        f'if the document is very creased, poorly lit, very crumpled, poorly framed or '
-                                        f'distorted, otherwise answer "Yes" (and nothing else).'}]
+    content = [{"type": "text", "text": f'''I send you a picture of document. You have to tell me if the document is readable. 
+    Answer "No" (and nothing else) if the document i creased, poorly lit, very crumpled, poorly framed or distorted, 
+    or any other condition that makes it hard to read. Otherwise answer "Yes" (and nothing else).'''}]
 
     logger.info(content)
 
