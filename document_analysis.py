@@ -239,8 +239,17 @@ class ArvalClassicDocumentAnalyzer:
         :return:
         """
         folder_ground_truths = Path('data/performances_data/valid_data/arval_classic_restitution_json/')
-        self.template = get_result_template(folder_ground_truths)
-
+        #self.template = get_result_template(folder_ground_truths)
+        self.template = {'block_2': {"Immatriculé": None,
+                                     "Kilométrage": None,
+                                     "Restitué le": None,
+                                     "N° de série": None},
+                        'block_4': {"Immatriculé": None,
+                                   "Nom et prénom": None,
+                                   "E-mail": None,
+                                   "Tél": None,
+                                   "Société": None}
+                         }
     def analyze_block2_text(self, block2_text_image_path, verbose=False, plot_boxes=False):
 
         self.result_json_block_2 = {}
