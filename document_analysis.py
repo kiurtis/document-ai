@@ -28,6 +28,7 @@ class ArvalClassicDocumentAnalyzer:
         self.document_name = document_name
         self.path_to_document = path_to_document
         self.results = {}  # To be filled with results of analysis
+        self.results['details'] = {}
         self.folder_path = Path(self.path_to_document).parent  # Folder where the file is
         self.tmp_folder_path = self.folder_path / "tmp" / self.document_name.split(".")[0] # Folder where we'll store the blocks
         self.hyperparameters = hyperparameters
@@ -44,6 +45,7 @@ class ArvalClassicDocumentAnalyzer:
         # Templates to subdivise the bloc:
         self.template_path_signature_block2 = template_folder / 'template_block_2_garage.png'
         self.template_path_signature_block4 = template_folder / 'template_block_4_long.png'
+
 
         if not os.path.exists(self.tmp_folder_path):
             os.makedirs(self.tmp_folder_path)
@@ -192,6 +194,7 @@ class ArvalClassicDocumentAnalyzer:
                                                                                                   self.template_path_signature_block4
                                                                                                   )
         except Exception as e:
+            raise e
             logger.error(f"An error occurred trying to divide block 4 in two {self.document_name}:{e}")
 
     def get_or_create_blocks(self):
@@ -322,18 +325,23 @@ class ArvalClassicDocumentAnalyzer:
         if has_non_none_attributes(self, "block_4_info_path", "block_4_sign_path"):
             self.analyze_block4_text(self.block_4_info_path, verbose=False, plot_boxes=False)
             self.analyze_block4_signature_and_stamp(self.block_4_sign_path)
+            self.results['details']['block_2_image_analyzed'] = 'block_4_sign_path'
         else:
             self.analyze_block4_text(self.file_path_block4, verbose=False, plot_boxes=False)
             self.analyze_block4_signature_and_stamp(self.file_path_block4)
+            self.results['details']['block_4_image_analyzed'] = 'file_path_block4'
+
 
     def analyze_block2(self):
         #We check if the block2 is subdvided:
         if has_non_none_attributes(self, "block_2_info_path", "block_2_sign_path"):
             self.analyze_block2_text(self.block_2_info_path, verbose=False, plot_boxes=False)
             self.analyze_block2_signature_and_stamp(self.block_2_sign_path)
+            self.results['details']['block_2_image_analyzed'] = 'block_2_sign_path'
         else:
             self.analyze_block2_text(self.file_path_block2, verbose=False, plot_boxes=False)
             self.analyze_block2_signature_and_stamp(self.file_path_block2)
+            self.results['details']['block_2_image_analyzed'] = 'file_path_block2'
 
     def manage_orientation(self):
         """
@@ -413,7 +421,7 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
                                                     'le': '<NOT_FOUND>',
                                                     'Société': '<NOT_FOUND>'}}
 
-    def analyze_block2_text(self,block2_text_image_path, verbose=False, plot_boxes=False):
+    def analyze_block2_text(self, block2_text_image_path, verbose=False, plot_boxes=False):
         logger.info(f'Analyzing block 2 text...')
         logger.info(f'{block2_text_image_path}')
         # self.block_2_info_path = "/Users/amielsitruk/work/terra_cognita/customers/pop_valet/ai_documents/data/performances_data/valid_data/fleet_services_images/DM-984-VT_Proces_verbal_de_restitution_page-0001/blocks/DM-984-VT_Proces_verbal_de_restitution_page-0001_block 2.png"
@@ -443,10 +451,9 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
         plate_number_GPT = response2["choices"][0]['message']['content']
 
-        logger.info(f'Old plate number :')
-        logger.info(f'{self.result_json_block_2["Immatriculé"]}')
+        logger.info(f'Old plate number : {self.result_json_block_2["Immatriculé"]}')
         self.result_json_block_2["Immatriculé"] = plate_number_GPT
-        logger.info(f'plate_number_GPT')
+        logger.info(f'GPT plate number : {plate_number_GPT}')
         logger.info(f'{self.result_json_block_2["Immatriculé"]}')
 
     def assess_overall_quality(self):
