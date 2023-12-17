@@ -93,7 +93,7 @@ def build_overall_quality_checking_payload(image_path):
 
     # Construct the content for each key
     content = [{"type": "text", "text": f'''I send you a picture of document. You have to tell me if the document is readable. 
-    Answer "No" (and nothing else) if the document i creased, poorly lit, very crumpled, poorly framed or distorted, 
+    Answer "No" (and nothing else) if the document is creased, poorly lit, very crumpled, poorly framed or distorted, 
     or any other condition that makes it hard to read. Otherwise answer "Yes" (and nothing else).'''}]
 
     logger.info(content)
@@ -118,10 +118,12 @@ def build_signature_checking_payload(image_path):
     base64_image = encode_image(image_path)
 
     # Construct the content for each key
-    content = [{"type": "text", "text": f'Is the signature and stamp present on the document? Answer only one word, you have only 3 choices; "both", "stamp","signature".'
-                                        f'If both, answer only "both"'
-                                        f'If only a stamp, answer only "stamp" '
-                                        f'If only a a signature, answer only "signature"'}]
+    content = [{"type": "text", "text": '''Are the signature and stamp present on the document? Answer only one word, 
+                                            you have only 4 choices, "both", "stamp", "signature", "none".
+                                            - If both, answer only "both". 
+                                            - If only a stamp, answer only "stamp".
+                                            - If only a a signature, answer only "signature".
+                                            - If none are present, answer only "none".'''}]
     logger.info(content)
 
     # Add the image part
