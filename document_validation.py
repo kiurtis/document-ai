@@ -23,17 +23,17 @@ class ResultValidator:
     def validate_quality(self):
         self.quality_is_ok = self.result['overall_quality'].lower() == 'yes'
     def validate_signatures(self):
-        signature_block_2 = self.result['signature_and_stamp_block_2'] in ('both', 'signature')
-        signature_block_4 = self.result['signature_and_stamp_block_4'] in ('both', 'signature')
+        signature_block_2_condition = self.result['signature_and_stamp_block_2'] in ('both', 'signature')
+        signature_block_4_condition = self.result['signature_and_stamp_block_4'] in ('both', 'signature')
 
-        if signature_block_2 and signature_block_4:
+        if signature_block_2_condition and signature_block_4_condition:
             self.signatures_are_ok = True
         else:
             self.signatures_are_ok = False
 
     def validate_stamps(self):
-        stamp_block_2_condition = self.result['signature_and_stamp_block_2'] in ('both', 'stamp') or (not self.from_concessionaire) # If not from concessionaire, no stamp needed
-        stamp_block_4_condition = self.result['signature_and_stamp_block_4'] in ('both', 'stamp') or (not self.to_concessionaire) # If not to concessionaire, no stamp needed
+        stamp_block_2_condition = self.result['signature_and_stamp_block_2'] in ('both', 'stamp') or (self.from_concessionaire is True) # If not from concessionaire, no stamp needed
+        stamp_block_4_condition = self.result['signature_and_stamp_block_4'] in ('both', 'stamp') or (self.to_concessionaire is True) # If not to concessionaire, no stamp needed
 
         if stamp_block_2_condition and stamp_block_4_condition:
             self.stamps_are_ok = True
@@ -99,6 +99,8 @@ class ResultValidator:
             self.refused_causes.append('block4_is_not_filled')
         if not self.block4_is_filled_by_company:
             self.refused_causes.append('block4_is_not_filled_by_company')
+        if not self.block2_is_filled:
+            self.refused_causes.append('block2_is_not_filled')
 
 
 
