@@ -32,8 +32,8 @@ class ResultValidator:
             self.signatures_are_ok = False
 
     def validate_stamps(self):
-        stamp_block_2_condition = self.result['signature_and_stamp_block_2'] in ('both', 'stamp') or (self.from_concessionaire is True) # If not from concessionaire, no stamp needed
-        stamp_block_4_condition = self.result['signature_and_stamp_block_4'] in ('both', 'stamp') or (self.to_concessionaire is True) # If not to concessionaire, no stamp needed
+        stamp_block_2_condition = self.result['signature_and_stamp_block_2'] in ('both', 'stamp') or (self.from_concessionaire is False) # If not from concessionaire, no stamp needed
+        stamp_block_4_condition = self.result['signature_and_stamp_block_4'] in ('both', 'stamp') or (self.to_concessionaire is False) # If not to concessionaire, no stamp needed
 
         if stamp_block_2_condition and stamp_block_4_condition:
             self.stamps_are_ok = True
