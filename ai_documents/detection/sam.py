@@ -1,45 +1,41 @@
+import os
+from pathlib import Path
+from PIL import Image
+
+
 from segment_anything import sam_model_registry, SamPredictor,SamAutomaticMaskGenerator
 import supervision as sv
-#import torch
 import pytesseract
 from pytesseract import Output
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv, find_dotenv
-import os
+
 from loguru import logger
 import cv2
-from PIL import Image
 
 
 load_dotenv(find_dotenv())
 DEVICE = os.environ.get('DEVICE')
+SAM_MODEL = os.environ.get('SAM_MODEL')  # "vit_b" or "vit_h"
 
-#SAM pre template-matching_processing function:
-
-model_type = "vit_b"
+MODEL_PATHS = {"vit_b": "sam_vit_b_01ec64.pth",
+               "vit_h": "sam_vit_h_4b8939.pth"}
 
 HOME = os.getcwd()
-#CHECKPOINT_PATH = os.path.join(HOME, "sam_weights", "sam_vit_h_4b8939.pth")
-CHECKPOINT_PATH = os.path.join(HOME, "sam_weights", "sam_vit_b_01ec64.pth")
-
-#Check if the weight exist, if they don't we download them
-#print(CHECKPOINT_PATH, "; exist:", os.path.isfile(CHECKPOINT_PATH))
+CHECKPOINT_PATH = Path("data/sam_weights") / MODEL_PATHS[SAM_MODEL]
 
 if os.path.isfile(CHECKPOINT_PATH):
     logger.info(f"SAM weights located in {CHECKPOINT_PATH}")
 else:
-    logger.info("Downloading SAM weights")
-    os.makedirs(os.path.join(HOME, 'sam_weights'), exist_ok=True)
-    os.system(f'wget -q https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth -P {os.path.join(HOME, "sam_weights")}')
+    logger.info("Downloading SAM weights...")
+    os.makedirs('sam_weights', exist_ok=True)
+    os.system(f'wget -q https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth -P {CHECKPOINT_PATH.parent}')
     logger.info(f"{CHECKPOINT_PATH}; exists: {os.path.isfile(CHECKPOINT_PATH)}")
 
-
-sam = sam_model_registry[model_type](checkpoint=CHECKPOINT_PATH)
-
-#If cuda available uncomment that line
+sam = sam_model_registry[SAM_MODEL](checkpoint=CHECKPOINT_PATH)
 sam.to(device=DEVICE)
 
-mask_generator_2 = SamAutomaticMaskGenerator(
+mask_generator = SamAutomaticMaskGenerator(
     model=sam,
     points_per_side=4,
     pred_iou_thresh=0.82,
@@ -50,7 +46,7 @@ mask_generator_2 = SamAutomaticMaskGenerator(
 )
 
 
-def detect_page(img_path, sam_model=mask_generator_2, plot_option=False):
+def detect_page(img_path, sam_model=mask_generator, plot_option=False):
     """
     Detect
     :param img_path:

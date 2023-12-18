@@ -4,7 +4,7 @@ from PIL import ImageDraw
 import PIL
 import random
 
-from document_parsing import get_block_coordinates
+from ai_documents.analysis.cv.document_parsing import get_block_coordinates
 
 def plot_boxes_with_text(data,doc_size):
     """

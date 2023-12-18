@@ -1,6 +1,5 @@
 import PIL
 import json
-import cv2
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,16 +10,14 @@ from pathlib import Path
 
 
 #Importing functions
-from utils import get_result_template, has_non_none_attributes
-from template_matching_function import get_image_dimensions, draw_contour_rectangles_on_image, crop_blocks_in_image, arval_classic_divide_and_crop_block2, arval_classic_divide_and_crop_block4,\
+from ai_documents.utils import get_result_template, has_non_none_attributes
+from ai_documents.detection.template_matching import get_image_dimensions, crop_blocks_in_image, arval_classic_divide_and_crop_block2, arval_classic_divide_and_crop_block4,\
     find_top_and_bot_of_arval_classic_restitution, resize_arval_classic, get_block2_rectangle, get_block4_rectangle, draw_rectangles_and_save
-from sam import sam_pre_template_matching_function
-from pipeline import get_processed_boxes_and_words,postprocess_boxes_and_words_arval_classic_restitution
-from document_parsing import find_next_right_word
-from image_processing import get_image_orientation, rotate_image
-from gpt import build_block_checking_payload, request_completion, build_overall_quality_checking_payload, build_signature_checking_payload,number_plate_check_gpt
-from plotting import plot_boxes_with_text
-from performance_estimation import has_found_box
+from ai_documents.detection.sam import sam_pre_template_matching_function
+from ai_documents.analysis.cv.boxes_processing import get_processed_boxes_and_words,postprocess_boxes_and_words_arval_classic_restitution
+from ai_documents.analysis.cv.document_parsing import find_next_right_word
+from ai_documents.analysis.lmm.gpt import build_block_checking_payload, request_completion, build_overall_quality_checking_payload, build_signature_checking_payload
+from ai_documents.plotting import plot_boxes_with_text
 
 
 class ArvalClassicDocumentAnalyzer:
@@ -33,6 +30,10 @@ class ArvalClassicDocumentAnalyzer:
         self.tmp_folder_path = self.folder_path / "tmp" / self.document_name.split(".")[0] # Folder where we'll store the blocks
         self.hyperparameters = hyperparameters
         self.cropped_by_sam = False
+        self.block_4_info_path = None
+        self.block_4_sign_path = None
+        self.block_2_info_path = None
+        self.block_2_sign_path = None
 
         # Templates used to process the template matching
         template_folder = Path('data/performances_data/template/arval_classic_restitution')
@@ -45,7 +46,6 @@ class ArvalClassicDocumentAnalyzer:
         # Templates to subdivise the bloc:
         self.template_path_signature_block2 = template_folder / 'template_block_2_garage.png'
         self.template_path_signature_block4 = template_folder / 'template_block_4_long.png'
-
 
         if not os.path.exists(self.tmp_folder_path):
             os.makedirs(self.tmp_folder_path)
@@ -194,7 +194,6 @@ class ArvalClassicDocumentAnalyzer:
                                                                                                   self.template_path_signature_block4
                                                                                                   )
         except Exception as e:
-            raise e
             logger.error(f"An error occurred trying to divide block 4 in two {self.document_name}:{e}")
 
     def get_or_create_blocks(self):
@@ -352,26 +351,12 @@ class ArvalClassicDocumentAnalyzer:
             self.analyze_block2_signature_and_stamp(self.file_path_block2)
             self.results['details']['block_2_image_analyzed'] = 'file_path_block2'
 
-    def manage_orientation(self):
-        """
-        Check if the image is rotated and rotate it if needed.
-        """
-        try:
-            self.document_orientation = get_image_orientation(self.path_to_document)
-            if self.document_orientation != 'Horizontal':
-                logger.info(f'Rotating {self.document_name}...')
-                self.path_to_document = rotate_image(self.path_to_document)
-        except Exception as e:
-            logger.error(f'An error occurred trying to rotate {self.document_name}:{e}')
-
-
     def assess_overall_quality(self):
         logger.info(f'Assessing overall quality...')
         logger.info("Overall quality asssessment is not implemented yet in the custom pipeline")
 
     def analyze(self):
         logger.info(f'Analyzing {self.document_name}')
-        # self.manage_orientation()
         self.assess_overall_quality()
         self.get_or_create_blocks()
         logger.info(f'Getting result template...')

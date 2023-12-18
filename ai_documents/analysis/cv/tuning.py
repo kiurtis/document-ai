@@ -8,13 +8,14 @@ import numpy as np
 from Levenshtein import distance
 from loguru import logger
 
-from utils import clean_listdir, read_json, get_result_template
-from pipeline import get_processed_boxes_and_words, postprocess_boxes_and_words, postprocess_boxes_and_words_unguided_bloc
-from plotting import plot_boxes_with_text
+from ai_documents.utils import clean_listdir, read_json, get_result_template
+from ai_documents.analysis.cv.boxes_processing import get_processed_boxes_and_words, postprocess_boxes_and_words, \
+    postprocess_boxes_and_words_unguided_bloc
+from ai_documents.plotting import plot_boxes_with_text
 from document_parsing import find_next_right_word
 
-FOLDER_GROUND_TRUTHS = Path('data/performances_data/valid_data/fleet_services_jsons')
-FOLDER_IMAGES = Path('data/performances_data/valid_data/fleet_services_images')
+FOLDER_GROUND_TRUTHS = Path('../../../data/performances_data/valid_data/fleet_services_jsons')
+FOLDER_IMAGES = Path('../../../data/performances_data/valid_data/fleet_services_images')
 RESULT_TEMPLATE = get_result_template(
     folder_ground_truths=FOLDER_GROUND_TRUTHS,
 )

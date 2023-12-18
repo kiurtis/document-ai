@@ -24,15 +24,13 @@ if not DIR_CHANGED:
     
 
 # +
-from PIL import Image
 import matplotlib.pyplot as plt
 import cv2
-import numpy as np
 import os
 from pathlib import Path
 import matplotlib.image as mpimg
 
-from template_matching_function import get_image_dimensions,find_block2_infos,find_block4_infos,draw_contour_rectangles_on_image,crop_blocks_in_image,arval_classic_divide_and_crop_bloc2,arval_classic_divide_and_crop_bloc4
+from ai_documents.detection.template_matching_function import get_image_dimensions,find_block2_infos,find_block4_infos,draw_contour_rectangles_on_image,crop_blocks_in_image,arval_classic_divide_and_crop_bloc2,arval_classic_divide_and_crop_bloc4
 
 
 # +
@@ -157,8 +155,6 @@ print("All files have been processed.")
 # # TESTING Signature detection
 
 # +
-
-from PIL import Image
 
 def place_image_in_center(input_image_path, output_image_size, output_image_path):
     # Load the input image
@@ -312,7 +308,6 @@ print("All files have been processed.")
 # # Checking if there is a signature/ stamp
 
 # +
-from template_matching_function import multi_scale_template_matching
 
 
 # Function to perform template matching at multiple scales

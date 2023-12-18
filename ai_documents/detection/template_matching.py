@@ -71,7 +71,7 @@ def multi_scale_template_matching(image_path, template_path, scales, plot_img=Fa
     cv2.rectangle(img_rgb, best_match_coordinates[0], best_match_coordinates[1], (0, 255, 0), 2)
 
     # Save the result image
-    output_image_path = 'match_result_updated.png'
+    output_image_path = '../../match_result_updated.png'
     cv2.imwrite(output_image_path, img_rgb)
     if plot_img:
         fig, ax = plt.subplots(figsize=(16, 12))
