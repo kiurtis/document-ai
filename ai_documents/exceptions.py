@@ -1,10 +1,11 @@
-class LLMError(Exception):
+class LLMProcessingError(Exception):
     pass
 
-class ImageResizerError(Exception):
-    pass
-class ResultValidatorError(Exception):
+class PageDetectionError(Exception):
     pass
 
-class DocumentAnalyzerError(Exception):
+class ResultValidationError(Exception):
+    pass
+
+class DocumentAnalysisError(Exception):
     pass
