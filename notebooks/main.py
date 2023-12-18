@@ -145,7 +145,7 @@ files_to_test = all_documents.keys()
                  #'FM-444-ZE_pv_arval_p1.jpeg'
 #                ]
 
-files_to_test = [
+'''files_to_test = [
                 'EQ-431-AP_pv_de_restitution_arval_X1__p1.jpeg',
                 'ES-337-RE_PVR.jpeg',
                 'ET-679-SV_PV_restitution_Arval_.jpeg',
@@ -164,10 +164,10 @@ files_to_test = [
                 'FK-468-LV_PV_de_reprise_p1.jpeg',
                 'FL-115-PN_Pv_de_restitution_p1.jpeg',
                  'FL-147-SN_Pv_arval.jpeg'
-                 ]
+                 ]'''
 files_to_exclude = []
 files_to_iterate = {file: all_documents[file]
-                    for file in sorted(files_to_test)[:3]
+                    for file in sorted(files_to_test)[:50]
                     if file not in files_to_exclude}.items()
 
 for name, info in tqdm(files_to_iterate):
