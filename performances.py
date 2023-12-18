@@ -27,7 +27,7 @@ from ai_documents.validation.entities import ResultValidator
 from loguru import logger
 
 
-from utils import normalize_str
+from ai_documents.utils import normalize_str
 
 # %load_ext autoreload
 # %autoreload 2

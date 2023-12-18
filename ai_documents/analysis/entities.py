@@ -7,17 +7,30 @@ import os
 from loguru import logger
 from pathlib import Path
 
+import PIL
+import json
+import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+from loguru import logger
+from pathlib import Path
 
 
 #Importing functions
 from ai_documents.utils import get_result_template, has_non_none_attributes
-from ai_documents.detection.template_matching import get_image_dimensions, crop_blocks_in_image, arval_classic_divide_and_crop_block2, arval_classic_divide_and_crop_block4,\
-    find_top_and_bot_of_arval_classic_restitution, resize_arval_classic, get_block2_rectangle, get_block4_rectangle, draw_rectangles_and_save
+from ai_documents.detection.template_matching import get_image_dimensions, crop_blocks_in_image, \
+    arval_classic_divide_and_crop_block2, arval_classic_divide_and_crop_block4,\
+    find_top_and_bot_of_arval_classic_restitution, resize_arval_classic, get_block2_rectangle, get_block4_rectangle, \
+    draw_rectangles_and_save
 from ai_documents.detection.sam import sam_pre_template_matching_function
-from ai_documents.analysis.cv.boxes_processing import get_processed_boxes_and_words,postprocess_boxes_and_words_arval_classic_restitution
+from ai_documents.analysis.cv.boxes_processing import get_processed_boxes_and_words,\
+    postprocess_boxes_and_words_arval_classic_restitution
 from ai_documents.analysis.cv.document_parsing import find_next_right_word
-from ai_documents.analysis.lmm.gpt import build_block_checking_payload, request_completion, build_overall_quality_checking_payload, build_signature_checking_payload
+from ai_documents.analysis.lmm.gpt import build_block_checking_payload, request_completion, \
+    build_overall_quality_checking_payload, build_signature_checking_payload, number_plate_check_gpt
 from ai_documents.plotting import plot_boxes_with_text
+from ai_documents.exceptions import DocumentAnalysisError, LMMProcessingError
 
 
 class ArvalClassicDocumentAnalyzer:
@@ -240,10 +253,10 @@ class ArvalClassicDocumentAnalyzer:
         folder_ground_truths = Path('data/performances_data/valid_data/arval_classic_restitution_json/')
         #self.template = get_result_template(folder_ground_truths)
         self.template = {'block_2': {"Immatriculé": None,
-                                     "Kilométrage": None,
-                                     "Restitué le": None,
-                                     "N° de série": None},
-                        'block_4': {"Immatriculé": None,
+                                         "Kilométrage": None,
+                                         "Restitué le": None,
+                                         "N° de série": None},
+                            'block_4': {
                                    "Nom et prénom": None,
                                    "E-mail": None,
                                    "Tél": None,
@@ -356,20 +369,23 @@ class ArvalClassicDocumentAnalyzer:
         logger.info("Overall quality asssessment is not implemented yet in the custom pipeline")
 
     def analyze(self):
-        logger.info(f'Analyzing {self.document_name}')
-        self.assess_overall_quality()
-        self.get_or_create_blocks()
-        logger.info(f'Getting result template...')
-        self.get_result_template()
-        logger.info(f'Analyzing block 2...')
-        self.analyze_block2()
-        logger.info(f'Analyzing block 4...')
-        self.analyze_block4()
+        try:
+            logger.info(f'Analyzing {self.document_name}')
+            self.assess_overall_quality()
+            self.get_or_create_blocks()
+            logger.info(f'Getting result template...')
+            self.get_result_template()
+            logger.info(f'Analyzing block 2...')
+            self.analyze_block2()
+            logger.info(f'Analyzing block 4...')
+            self.analyze_block4()
 
-        self.results = {}
-        self.results['File Name'] = self.document_name
-        self.results['block_2'] = self.result_json_block_2
-        self.results['block_4'] = self.result_json_block_4
+            self.results = {}
+            self.results['File Name'] = self.document_name
+            self.results['block_2'] = self.result_json_block_2
+            self.results['block_4'] = self.result_json_block_4
+        except:
+            raise DocumentAnalysisError(f'Could not analyze {self.document_name}')
 
     def save_results(self):
         self.results_json = json.dumps(self.results)
@@ -385,14 +401,16 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
                 try:
                     content = json.loads(content)
                 except:
-                    pass  # content is already a string
+                    pass  # content is not a string dictionary, so it is already a string and no more processing to do
                 return content
             except Exception as e:
-                logger.warning(f'Could not process {attribute} response: {e}')
-                return None
+                raise LMMProcessingError(f'Could not process {attribute} response: {e}')
+                #logger.warning(f'Could not process {attribute} response: {e}')
+                #return None
         else:
-            logger.warning(f'Could not process {attribute} response: {response["error"]["code"]}')
-            return None
+            raise LMMProcessingError(f'Could not process {attribute} response: {e}')
+            #logger.warning(f'Could not process {attribute} response: {response["error"]["code"]}')
+            #return None
 
     def analyze_block4_text(self,block4_text_image_path, verbose=False, plot_boxes=False):
         logger.info(f'Analyzing block 4 text...')
@@ -472,9 +490,12 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         self.signature_and_stamp_block_4 = self.safe_process_response(response, 'signature_and_stamp_4')
 
     def analyze(self):
-        super().analyze()
-        self.results['overall_quality'] = self.overall_quality
+        try:
+            super().analyze()
+            self.results['overall_quality'] = self.overall_quality
 
-        self.results['signature_and_stamp_block_2'] = self.signature_and_stamp_block_2
-        self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_block_4
+            self.results['signature_and_stamp_block_2'] = self.signature_and_stamp_block_2
+            self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_block_4
+        except Exception as e:
+            raise DocumentAnalysisError(f'Could not analyze document {self.document_name}: {e}')
 

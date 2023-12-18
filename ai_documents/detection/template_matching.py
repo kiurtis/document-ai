@@ -7,13 +7,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-from segment_anything import sam_model_registry, SamPredictor,SamAutomaticMaskGenerator
-import supervision as sv
-import torch
-import matplotlib.pyplot as plt
-import pytesseract
-from pytesseract import Output
-
+from ai_documents.exceptions import TemplateMatchingError, ImageNotFoundError
 
 load_dotenv(find_dotenv())
 PLOT_MATCHED_BLOCKS = os.environ.get('PLOT_MATCHED_BLOCKS')
@@ -58,13 +52,7 @@ def multi_scale_template_matching(image_path, template_path, scales, plot_img=Fa
     results = []
 
     # Initial scale range
-
     best_match_quality, best_match_coordinates, best_scale = get_best_match_to_template(img, template, scales, results)
-
-    # Continue with smaller scales if needed
-    #start_scale, end_scale = best_scale - 0.05, 0.2
-    #smaller_scales = np.linspace(start_scale, end_scale, 20)
-    #best_match_quality, best_match_coordinates, best_scale = get_best_match_to_template(img, template, smaller_scales, results)
 
     # Draw a rectangle around the matched region
     img_rgb = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
@@ -94,7 +82,7 @@ def remove_rectangle_from_image(image_path, output_path, top_left, bottom_right,
     img = cv2.imread(image_path)
 
     if img is None:
-        raise ValueError("Could not load the image. Please check the path.")
+        raise ImageNotFoundError(f"Image not found at path {image_path}")
 
     # Convert coordinates to integer
     top_left = tuple(map(int, top_left))
@@ -219,7 +207,6 @@ def isolate_code_bar_part_arval_classic(image, output_image_path, plot_img=False
     for i in range(6):  # There will be 5 horizontal sections
         for j in range(2):  # There will be 2 vertical sections
             if not (i == 5 and j == 1):  # Skip the bottom right section
-                #print('i,j',i,j)
                 top_left_corner = (j * middle_x, i * spacing)
                 bottom_right_corner = ((j + 1) * middle_x, (i + 1) * spacing)
                 draw.rectangle([top_left_corner, bottom_right_corner], fill="white")
@@ -313,7 +300,8 @@ def multi_scale_multi_results_temp_matching(image_path, temp_path, output_path, 
         try:
             output_image_path, match_quality, scale,best_match_coordinates =multi_scale_template_matching(image_temp, temp_path, plot_img)
         except Exception as e:
-            print("No match found or an error occurred:", e)
+            raise TemplateMatchingError(f"No match found or an error occurred:{e}")
+
         list_coord.append(best_match_coordinates)
         top_left, bottom_right = best_match_coordinates[0], best_match_coordinates[1]
         image_temp = remove_rectangle_from_image(image_temp, output_path, top_left, bottom_right, plot_img)
@@ -365,7 +353,7 @@ def draw_contour_rectangles_on_image(image_path, rectangles):
     # Load the image
     img = cv2.imread(image_path)
     if img is None:
-        raise ValueError("Could not load the image. Please check the path.")
+        raise ImageNotFoundError("Could not load the image. Please check the path.")
 
     # Draw rectangles on the image
     for (top_left, bottom_right) in rectangles:

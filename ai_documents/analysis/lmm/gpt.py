@@ -81,7 +81,6 @@ def number_plate_check_gpt(plate_number, image_path):
             "url": f"data:image/jpeg;base64,{base64_image}"
         }
     })
-    logger.info(content)
 
     payload = set_payload_content(content)
 

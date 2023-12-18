@@ -1,6 +1,8 @@
 from loguru import logger
 from Levenshtein import distance as l_distance
 
+from ai_documents.exceptions import ResultValidationError
+
 
 class ResultValidator:
     def __init__(self, results, plate_number, valet_name=None, from_concessionaire=None, to_concessionaire=None):
@@ -104,22 +106,26 @@ class ResultValidator:
             self.refused_causes.append('block2_is_not_filled')
 
     def validate(self):
-        self.validate_quality()
-        self.validate_signatures()
-        self.validate_stamps()
-        self.validate_mileage()
-        self.validate_number_plate_is_filled()
-        self.validate_number_plate_is_right()
-        self.validate_block4_is_filled()
-        self.validate_block4_is_filled_by_company()
-        self.validate_restitution_date()
-        self.validate_serial_number()
-        self.validate_block2_is_filled()
-        self.gather_refused_motivs()
+        try:
+            self.validate_quality()
+            self.validate_signatures()
+            self.validate_stamps()
+            self.validate_mileage()
+            self.validate_number_plate_is_filled()
+            self.validate_number_plate_is_right()
+            self.validate_block4_is_filled()
+            self.validate_block4_is_filled_by_company()
+            self.validate_restitution_date()
+            self.validate_serial_number()
+            self.validate_block2_is_filled()
+            self.gather_refused_motivs()
 
-        logger.info(f"Refused causes: {self.refused_causes}")
+            logger.info(f"Refused causes: {self.refused_causes}")
 
-        self.validated = self.stamps_are_ok and self.signatures_are_ok and self.mileage_is_ok \
-                         and self.number_plate_is_filled and self.number_plate_is_right and self.block4_is_filled \
-                         and self.block4_is_filled_by_company and self.restitution_date_is_ok and self.serial_number_is_ok
+            self.validated = self.stamps_are_ok and self.signatures_are_ok and self.mileage_is_ok \
+                             and self.number_plate_is_filled and self.number_plate_is_right and self.block4_is_filled \
+                             and self.block4_is_filled_by_company and self.restitution_date_is_ok \
+                             and self.serial_number_is_ok
+        except Exception as e:
+            raise ResultValidationError("Error while validating the result") from e
         return self.validated

@@ -46,7 +46,7 @@ mask_generator = SamAutomaticMaskGenerator(
 )
 
 
-def detect_page(img_path, sam_model=mask_generator, plot_option=False):
+def detect_page(img_path, sam_model=mask_generator, plot_option=True):
     """
     Detect
     :param img_path:
