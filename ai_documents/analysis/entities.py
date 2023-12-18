@@ -29,6 +29,7 @@ class ArvalClassicDocumentAnalyzer:
         self.document_name = document_name
         self.path_to_document = path_to_document
         self.results = {}  # To be filled with results of analysis
+        self.results['details'] = {}
         self.folder_path = Path(self.path_to_document).parent  # Folder where the file is
         self.tmp_folder_path = self.folder_path / "tmp" / self.document_name.split(".")[0] # Folder where we'll store the blocks
         self.hyperparameters = hyperparameters
