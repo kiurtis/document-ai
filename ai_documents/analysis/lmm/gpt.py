@@ -140,7 +140,7 @@ def build_signature_checking_payload(image_path):
 if __name__ == '__main__':
     # Example usage
     keys = ["Immatriculé", "Kilométrage", "Restitué le", "Numéro de série", "Modèle", "Couleur"]
-    image_path = "/Users/amielsitruk/work/terra_cognita/customers/pop_valet/ai_documents/data/performances_data/valid_data/fleet_services_images/DM-984-VT_Proces_verbal_de_restitution_page-0001/blocks/DM-984-VT_Proces_verbal_de_restitution_page-0001_block 3.png"
+    image_path = "/data/performances_data/valid_data/fleet_services_images/DM-984-VT_Proces_verbal_de_restitution_page-0001/blocks/DM-984-VT_Proces_verbal_de_restitution_page-0001_block 3.png"
     payload = build_block_checking_payload(keys, image_path)
     print(payload)
 

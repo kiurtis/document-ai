@@ -22,12 +22,9 @@ from pathlib import Path
 import pandas as pd
 
 from tqdm import tqdm
-from document_analysis import ArvalClassicDocumentAnalyzer, ArvalClassicGPTDocumentAnalyzer
-from document_validation import ResultValidator
+from ai_documents.analysis.entities import ArvalClassicDocumentAnalyzer, ArvalClassicGPTDocumentAnalyzer
+from ai_documents.validation.entities import ResultValidator
 from loguru import logger
-
-
-from utils import normalize_str
 
 # %load_ext autoreload
 # %autoreload 2
@@ -38,7 +35,6 @@ invalid_restitutions_infos['formatted_filename'] = invalid_restitutions_infos['f
 #Getting all the documents path and name
 image_extensions = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.bmp']
 all_documents = {}
-
 for status in [#'valid',
             'invalid'
                ]:
@@ -113,76 +109,31 @@ bad_orientation_file = ["EC-609-NN_PVR.jpeg",
 #files_to_exclude = [] + bad_orientation_file  # Could depends on different cases
 
 files_to_test = all_documents.keys()
-#failing_file_explained = ['EM-272-VS_Document_p1.jpeg' # Un doigt bloque la reconnaissance d'un des templates
-#                 ]
-#working_files = pd.read_csv('results/full_result_analysis_20231208_192447.csv')['document_name'].tolist()
-#working_files += ["EN-869-YH_Pvreprise_p1.jpeg",
-#                  'EC-609-NN_PVR.jpeg',
-#                  'ET-679-SV_PVrestitutionArval.jpeg']
-#files_to_exclude = [] + working_files + failing_file_explained
 
-#files_to_test = [#'EQ-431-AP_pv_de_restitution_arval_X1__p1.jpeg',
-                 #'ET-679-SV_PV_restitution_Arval_.jpeg',
-                 #'EY-148-HE_DocumentPv_de_restitution_p1.jpeg',
-                 #'EZ-542-KH_pv_reprise.jpeg',
-                 #'EZ-561-VR_PV_ARVAL.jpeg',
-                 #'FA-463-MX_pv_de_restitution__p1.jpeg',
-                 #'FA-580-FY_Pv_de_restitution.jpeg',
-                 #'FA-772-LB_Pv.jpeg',
-                 #'FC-006-LG_Document_p1.jpeg',
-                 #'FC-080-PV_PV_de_reprise_p1.jpeg',
-                 #'FD-909-QB_pv_restitution__p1.jpeg',
-                 #'FF-404-LL_Pv_de_restitution.jpeg',
-                 #'FF-443-DA_PV_de_reprise_p1.jpeg',
-                 #'FG-018-EB_PVR_p1.jpeg',
-                 #'FG-767-EX_Pv_de_livraison_.jpeg',
-                 #'FG-882-EW_PV.jpeg',
-                 #'FG-926-HK_PV_de_restitution_final_ARVAL_de_FG-926-HK__p1.jpeg',
-                 #'FH-639-SE_Pv_restitution.jpeg',
-                 #'FH-681-LZ_ARVAL_Service_Lease_-_PV_restitution_p1.jpeg',
-                 #'FJ-068-NV_PV_de_reprise_p1.jpeg',
-                 #'FL-147-SN_Pv_arval.jpeg',
-                 #'FM-444-ZE_pv_arval_p1.jpeg'
-#                ]
-
-files_to_test = [
-                'EQ-431-AP_pv_de_restitution_arval_X1__p1.jpeg',
-                'ES-337-RE_PVR.jpeg',
-                #'ET-679-SV_PV_restitution_Arval_.jpeg',
-                'EZ-542-KH_pv_reprise.jpeg',
-                #'EZ-561-VR_PV_ARVAL.jpeg',
-                #'EZ-912-QS_PV_de_reprise_p2.jpeg',
-                #'FA-463-MX_pv_de_restitution__p1.jpeg',
-                #'FA-580-FY_Pv_de_restitution.jpeg',
-                #'FF-404-LL_Pv_de_restitution.jpeg',
-                #'FF-724-NB_Document_pv_p1.jpeg',
-                #'FG-882-EW_PV.jpeg',
-                #'FH-639-SE_Pv_restitution.jpeg',
-                #'FJ-324-KV_PV_de_reprise_p1.jpeg',
-                #'FJ-745-XQ_PV_de_reprise_p1.jpeg',
-                #'FK-184-AJ_PV_de_restitution.png',
-                #'FK-468-LV_PV_de_reprise_p1.jpeg',
-                #'FL-115-PN_Pv_de_restitution_p1.jpeg',
-                 #'FL-147-SN_Pv_arval.jpeg'
+files_to_test =["FF-495-RB_20230823_101857.jpeg",]
+failing_file_explained = ['EM-272-VS_Document_p1.jpeg' # Un doigt bloque la reconnaissance d'un des templates
                  ]
+working_files = pd.read_csv('results/full_result_analysis_20231208_192447.csv')['document_name'].tolist()
+working_files += ["EN-869-YH_Pvreprise_p1.jpeg",
+                  'EC-609-NN_PVR.jpeg',
+                  'ET-679-SV_PVrestitutionArval.jpeg']
+files_to_exclude = [] + working_files + failing_file_explained
+
 files_to_exclude = []
 files_to_iterate = {file: all_documents[file]
-                    for file in sorted(files_to_test)[:3]
+                    for file in sorted(files_to_test)[:50]
                     if file not in files_to_exclude}.items()
 
 for name, info in tqdm(files_to_iterate):
-    break
-    try:
-        if WITH_GPT:
-            document_analyzer = ArvalClassicGPTDocumentAnalyzer(name, info['path'], hyperparameters)
-        else:
-            document_analyzer = ArvalClassicDocumentAnalyzer(name, info['path'], hyperparameters)
-        document_analyzer.analyze()
-        document_analyzer.save_results()
-        #document_analyzer.plot_blocks()
 
+
+    try:
+        document_analyzer = ArvalClassicDocumentAnalyzer(name, info['path'], hyperparameters)
+        document_analyzer.analyze()
+        #document_analyzer.plot_blocks()
         logger.info(f"Result: {document_analyzer.results}")
 
+ 
         result_validator = ResultValidator(document_analyzer.results, plate_number=info['plate_number'])
         result_validator.validate()
 
@@ -197,7 +148,9 @@ for name, info in tqdm(files_to_iterate):
             'error':[None]
             }, index=[0])
             ])
+        i += 1
     except Exception as e:
+        raise e
         pd.concat([full_result_analysis,
                    pd.DataFrame({
                        'document_name': [name],
@@ -209,13 +162,17 @@ for name, info in tqdm(files_to_iterate):
                        'error':[e]
                    }, index=[0])
                    ])
-        logger.exception(f"Error: {e} while analyzing {name}")
+        logger.error(f"Error {e} while analyzing {name}")
 
 
 dt = datetime.now().strftime("%Y%m%d_%H%M%S")
 full_result_analysis.to_csv(f'results/full_result_analysis_{dt}.csv', index=False)
 
 files_iterable = {file: all_documents[file] for file in files_to_test}.items()
+
+# Typologie d'erreur
+# - Could not find block 2
+# - Could not find block 4
 
 
 ######
@@ -264,19 +221,19 @@ def compute_overall_metrics(ground_truth, predictions):
     return true_positives, false_positives, true_negatives, false_negatives
 
 # Load ground truth and predictions
-ground_truth_path = 'results/Ground_truths.csv'  # Replace with your actual path
-predictions_path = 'results/predictions_amiel.csv'    # Replace with your actual path
+#ground_truth_path = 'results/Ground_truths.csv'  # Replace with your actual path
+#predictions_path = 'results/predictions_amiel.csv'    # Replace with your actual path
 
-ground_truth_data = read_csv(ground_truth_path)
-predictions_data = read_csv(predictions_path)
+#ground_truth_data = read_csv(ground_truth_path)
+#predictions_data = read_csv(predictions_path)
 
 # Compute metrics
-tp, fp, tn, fn = compute_overall_metrics(ground_truth_data, predictions_data)
-print('Overall metrics :')
-print(f"True Positives: {tp}")
-print(f"False Positives: {fp}")
-print(f"True Negatives: {tn}")
-print(f"False Negatives: {fn}")
+#tp, fp, tn, fn = compute_overall_metrics(ground_truth_data, predictions_data)
+#print('Overall metrics :')
+#print(f"True Positives: {tp}")
+#print(f"False Positives: {fp}")
+#print(f"True Negatives: {tn}")
+#print(f"False Negatives: {fn}")
 
 
 def compute_metrics_per_error(ground_truth, predictions):
@@ -312,17 +269,14 @@ def compute_metrics_per_error(ground_truth, predictions):
     return metrics_per_error
 
 # Example usage
-tp_fp_tn_fn_per_error = compute_metrics_per_error(ground_truth_data, predictions_data)
+#tp_fp_tn_fn_per_error = compute_metrics_per_error(ground_truth_data, predictions_data)
 
-print('metrics per errors:')
-print(tp_fp_tn_fn_per_error)
+#print('metrics per errors:')
+#print(tp_fp_tn_fn_per_error)
 # Display the results
-for error, metrics in tp_fp_tn_fn_per_error.items():
-    print(f"Error: {error}")
-    print(f" True Positives: {metrics['true_positive']}")
-    print(f" False Positives: {metrics['false_positive']}")
-    print(f" True Negatives: {metrics['true_negative']}")
-    print(f" False Negatives: {metrics['false_negative']}\n")
-
-
-
+#for error, metrics in tp_fp_tn_fn_per_error.items():
+#    print(f"Error: {error}")
+#    print(f" True Positives: {metrics['true_positive']}")
+#    print(f" False Positives: {metrics['false_positive']}")
+#    print(f" True Negatives: {metrics['true_negative']}")
+#    print(f" False Negatives: {metrics['false_negative']}\n")
