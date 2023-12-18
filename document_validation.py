@@ -23,22 +23,22 @@ class ResultValidator:
     def validate_quality(self):
         self.quality_is_ok = self.result['overall_quality'].lower() == 'yes'
     def validate_signatures(self):
-        signature_block_2 = self.result['signature_and_stamp_block_2'] in ('both', 'signature')
-        signature_block_4 = self.result['signature_and_stamp_block_4'] in ('both', 'signature')
+        signature_block_2_condition = self.result['signature_and_stamp_block_2'] in ('both', 'signature')
+        signature_block_4_condition = self.result['signature_and_stamp_block_4'] in ('both', 'signature')
 
-        if signature_block_2 and signature_block_4:
+        if signature_block_2_condition and signature_block_4_condition:
             self.signatures_are_ok = True
         else:
             self.signatures_are_ok = False
 
     def validate_stamps(self):
-        stamp_block_2_condition = self.result['signature_and_stamp_block_2'] in ('both', 'stamp') or (not self.from_concessionaire) # If not from concessionaire, no stamp needed
-        stamp_block_4_condition = self.result['signature_and_stamp_block_4'] in ('both', 'stamp') or (not self.to_concessionaire) # If not to concessionaire, no stamp needed
+        stamp_block_2_condition = self.result['signature_and_stamp_block_2'] in ('both', 'stamp') or (self.from_concessionaire is False) # If not from concessionaire, no stamp needed
+        stamp_block_4_condition = self.result['signature_and_stamp_block_4'] in ('both', 'stamp') or (self.to_concessionaire is False) # If not to concessionaire, no stamp needed
 
         if stamp_block_2_condition and stamp_block_4_condition:
-            self.signatures_are_ok = True
+            self.stamps_are_ok = True
         else:
-            self.signatures_are_ok = False
+            self.stamps_are_ok = False
 
     def validate_mileage(self):
         self.mileage_is_ok = self.result['block_2']['Kilométrage'] not in ["<EMPTY>", "<NOT_FOUND>"]
@@ -55,6 +55,9 @@ class ResultValidator:
     def validate_number_plate_is_right(self):
         detected_plate_number = self.result['block_2']['Immatriculé']
         self.number_plate_is_right = l_distance(detected_plate_number, self.plate_number) < 3
+
+    def validate_block2_is_filled(self):
+        self.block2_is_filled = self.number_plate_is_filled & self.mileage_is_ok & self.restitution_date_is_ok & self.serial_number_is_ok
 
     def validate_block4_is_filled_by_company(self, distance_margin=4):
         company_name = self.result['block_4']['Société']
@@ -83,9 +86,9 @@ class ResultValidator:
         if not self.quality_is_ok:
             self.refused_causes.append('quality_is_not_ok')
         if not self.signatures_are_ok:
-            self.refused_causes.append('signature_is_not_ok')
+            self.refused_causes.append('signatures_are_not_ok')
         if not self.stamps_are_ok:
-            self.refused_causes.append('stamp_is_not_ok')
+            self.refused_causes.append('stamps_are_not_ok')
         if not self.mileage_is_ok:
             self.refused_causes.append('mileage_is_not_ok')
         if not self.number_plate_is_filled:
@@ -96,6 +99,8 @@ class ResultValidator:
             self.refused_causes.append('block4_is_not_filled')
         if not self.block4_is_filled_by_company:
             self.refused_causes.append('block4_is_not_filled_by_company')
+        if not self.block2_is_filled:
+            self.refused_causes.append('block2_is_not_filled')
 
 
 
@@ -108,6 +113,9 @@ class ResultValidator:
         self.validate_number_plate_is_right()
         self.validate_block4_is_filled()
         self.validate_block4_is_filled_by_company()
+        self.validate_restitution_date()
+        self.validate_serial_number()
+        self.validate_block2_is_filled()
         self.gather_refused_motivs()
 
         logger.info(f"Refused causes: {self.refused_causes}")

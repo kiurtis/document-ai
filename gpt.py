@@ -4,6 +4,7 @@ import json
 
 import requests
 from dotenv import load_dotenv, find_dotenv
+from loguru import logger
 
 load_dotenv(find_dotenv())
 # OpenAI API Key
@@ -26,7 +27,7 @@ def set_payload_content(content):
                 "content": content
             }
         ],
-        "max_tokens": 300
+        "max_tokens": 150
     }
     return payload
 
@@ -44,12 +45,14 @@ def build_block_checking_payload(keys, image_path):
                        ' and the corresponding values. Dont write anything else. If you dont find a key on the image, set the value to "<NOT_FOUND>".' \
                        'If you find the key but no value is associated, set the value to "<EMPTY>". No other value is accepted.'
     content.append({"type": "text", "text": dict_instruction})
+    logger.info(content)
 
     # Add the image part
     content.append({
         "type": "image_url",
         "image_url": {
-            "url": f"data:image/jpeg;base64,{base64_image}"
+            "url": f"data:image/jpeg;base64,{base64_image}",
+            "detail": "high"
         }
     })
 
@@ -63,10 +66,13 @@ def number_plate_check_gpt(plate_number, image_path):
     # Read and encode the image in base64 format
     base64_image = encode_image(image_path)
 
-    # Construct the content:
-    content = [{"type": "text", "text": f'Can you read "{plate_number}" on the image file after the word "Immatriculé"? '
-                                        f'If yes return "{plate_number}",if something is writen after "Immatriculé" but different, return this word'
-                                        f'Finally if there nothing after the word "Immatriculé" return "<EMPTY>".'}]
+    content = [{"type": "text", "text": f'Analyze the image. Your objective is to check if the value of '
+                                        f' "Immatriculé" is "{plate_number}". The value is often different so watch out.'
+                                        f'\n - If you see this, write "{plate_number}" and only this.'
+                                        f'\n - If you read something different, write what you read, and only this.'
+                                        f'\n - Finally if there nothing after the word "Immatriculé" write "<EMPTY>" and only this.'}]
+
+    logger.info(content)
     #Insist on the fact that I don't want a phrase
     # Add the image part
     content.append({
@@ -75,6 +81,7 @@ def number_plate_check_gpt(plate_number, image_path):
             "url": f"data:image/jpeg;base64,{base64_image}"
         }
     })
+    logger.info(content)
 
     payload = set_payload_content(content)
 
@@ -85,10 +92,11 @@ def build_overall_quality_checking_payload(image_path):
     base64_image = encode_image(image_path)
 
     # Construct the content for each key
-    content = [{"type": "text", "text": f'Is the overall quality of the document ok? Answer "No" (and nothing else)'
-                                        f'if the document is very creased, poorly lit, very crumpled, poorly framed or '
-                                        f'distorted, otherwise answer "Yes" (and nothing else).'}]
+    content = [{"type": "text", "text": f'''I send you a picture of document. You have to tell me if the document is readable. 
+    Answer "No" (and nothing else) if the document is creased, poorly lit, very crumpled, poorly framed or distorted, 
+    or any other condition that makes it hard to read. Otherwise answer "Yes" (and nothing else).'''}]
 
+    logger.info(content)
 
     # Add the image part
     content.append({
@@ -110,10 +118,13 @@ def build_signature_checking_payload(image_path):
     base64_image = encode_image(image_path)
 
     # Construct the content for each key
-    content = [{"type": "text", "text": f'Is the signature and stamp present on the document? Answer only one word, you have only 3 choices; "both", "stamp","signature".'
-                                        f'If both, answer only "both"'
-                                        f'If only a stamp, answer only "stamp" '
-                                        f'If only a a signature, answer only "signature"'}]
+    content = [{"type": "text", "text": '''Are the signature and stamp present on the document? Answer only one word, 
+                                            you have only 4 choices, "both", "stamp", "signature", "none".
+                                            - If both, answer only "both". 
+                                            - If only a stamp, answer only "stamp".
+                                            - If only a a signature, answer only "signature".
+                                            - If none are present, answer only "none".'''}]
+    logger.info(content)
 
     # Add the image part
     content.append({
@@ -134,6 +145,6 @@ if __name__ == '__main__':
     print(payload)
 
 
-    requests_completion = request_completion(payload,headers)
+    requests_completion = request_completion(payload, headers)
 
     response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)

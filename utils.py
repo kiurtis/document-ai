@@ -1,5 +1,9 @@
 import json
 import os
+import unicodedata
+
+normalize_str = lambda s: ''.join((c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn'))
+
 def clean_listdir(path_to_folder,only="file"):
     if only is None:
         return [listed for listed in os.listdir(path_to_folder) if not listed.startswith('.')]
