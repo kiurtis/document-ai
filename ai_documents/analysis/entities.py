@@ -7,15 +7,6 @@ import os
 from loguru import logger
 from pathlib import Path
 
-import PIL
-import json
-import matplotlib.image as mpimg
-import matplotlib.pyplot as plt
-import numpy as np
-import os
-from loguru import logger
-from pathlib import Path
-
 
 #Importing functions
 from ai_documents.utils import get_result_template, has_non_none_attributes
@@ -38,7 +29,6 @@ class ArvalClassicDocumentAnalyzer:
         self.document_name = document_name
         self.path_to_document = path_to_document
         self.results = {}  # To be filled with results of analysis
-        self.results['details'] = {}
         self.folder_path = Path(self.path_to_document).parent  # Folder where the file is
         self.tmp_folder_path = self.folder_path / "tmp" / self.document_name.split(".")[0] # Folder where we'll store the blocks
         self.hyperparameters = hyperparameters
@@ -71,7 +61,8 @@ class ArvalClassicDocumentAnalyzer:
         missing_files = []
 
         for i in filenames:
-            cropped_image_path = os.path.join(self.tmp_folder_path,i)
+            cropped_image_path = os.path.join(self.tmp_folder_path,
+                                              f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg")
 
             if os.path.exists(cropped_image_path):
                 block_doc.append(cropped_image_path)
@@ -181,7 +172,6 @@ class ArvalClassicDocumentAnalyzer:
                                    for i in range(len(blocks))]
             self.file_path_block2 = str(cropped_image_paths[0])
             self.file_path_block4 = str(cropped_image_paths[1])
-
 
         except Exception as e:
             logger.error(f"An error occurred trying to crop the image {self.document_name}:{e}")
@@ -413,8 +403,6 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
             #return None
 
     def analyze_block4_text(self,block4_text_image_path, verbose=False, plot_boxes=False):
-        logger.info(f'Analyzing block 4 text...')
-        logger.info(f'{block4_text_image_path}')
         if plot_boxes:
             image = PIL.Image.open(block4_text_image_path)
             plt.figure(figsize=(15, 15))
@@ -498,4 +486,3 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
             self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_block_4
         except Exception as e:
             raise DocumentAnalysisError(f'Could not analyze document {self.document_name}: {e}')
-
