@@ -26,21 +26,14 @@ if not DIR_CHANGED:
 # %autoreload 2
 
 # +
-from pathlib import Path 
-import math
-from pprint import pprint 
-import PIL
-from PIL import ImageDraw
+from pathlib import Path
 
-from Levenshtein import distance as l_distance
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
 
-from performance_estimation import compute_metrics_for_multiple_jsons, get_result_template, perform_hyperparameter_optimization, parse_random_search_results
-from document_parsing import get_words_coordinates, convert_to_cartesian, merge_word_with_following, find_next_right_word
-from plotting import plot_boxes_with_text, print_blocks_on_document, plot_centroids
+from performance_estimation import perform_hyperparameter_optimization, parse_random_search_results
+from ai_documents.analysis.cv.document_parsing import get_words_coordinates, convert_to_cartesian, merge_word_with_following, find_next_right_word
+from ai_documents.plotting import print_blocks_on_document, plot_centroids
 
 # -
 

@@ -1,9 +1,8 @@
-import os 
+import os
 import cv2
-import random
 from bisect import bisect_left
-from pipeline import get_processed_boxes_and_words_unguided_bloc
-from utils import clean_listdir
+from ai_documents.pipeline import get_processed_boxes_and_words_unguided_bloc
+from ai_documents.utils import clean_listdir
 
 #Functions that find non-crossing lines and cut the doc:
 

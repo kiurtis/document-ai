@@ -22,8 +22,8 @@ from pathlib import Path
 import pandas as pd
 
 from tqdm import tqdm
-from document_analysis import ArvalClassicDocumentAnalyzer,ArvalClassicGPTDocumentAnalyzer
-from document_validator import ResultValidator
+from ai_documents.analysis.entities import ArvalClassicDocumentAnalyzer, ArvalClassicGPTDocumentAnalyzer
+from ai_documents.validation.entities import ResultValidator
 from loguru import logger
 
 # %load_ext autoreload

@@ -26,22 +26,10 @@ if not DIR_CHANGED:
 # %autoreload 2
 
 # +
-from pathlib import Path 
-import math
-from pprint import pprint 
-import PIL
-from PIL import ImageDraw
+from pathlib import Path
 
-from Levenshtein import distance as l_distance
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from doctr.io import DocumentFile
-from doctr.models import ocr_predictor
-
-from performance_estimation import compute_metrics_for_multiple_jsons, get_result_template, perform_hyperparameter_optimization, parse_random_search_results
-from document_parsing import get_words_coordinates, convert_to_cartesian, merge_word_with_following, find_next_right_word
-from plotting import plot_boxes_with_text, print_blocks_on_document, plot_centroids, plot_boxes,plot_boxes_and_lines
-from pre_ocr_division import find_max_spacing_non_crossing_lines, cut_and_save_image, subdivide_batch_of_image
+from ai_documents.plotting import plot_boxes,plot_boxes_and_lines
+from ai_documents.detection.pre_ocr_division import find_max_spacing_non_crossing_lines, cut_and_save_image, subdivide_batch_of_image
 # -
 
 # ## I. Automatic division single image
@@ -98,7 +86,7 @@ subdivide_batch_of_image(FOLDER_IMAGES,4,hyperparameters,False)
 
 # +
 from performance_estimation import run_batch_analysis_undefined_blocs
-from utils import clean_listdir
+from ai_documents.utils import clean_listdir
 
 FOLDER_IMAGES = Path('data/performances_data/fleet_services_images')
 image_list = clean_listdir(FOLDER_IMAGES, only="dir") 
@@ -112,7 +100,7 @@ all_res = run_batch_analysis_undefined_blocs(image_list,hyperparameters,verbose=
 print(all_res)
 
 # +
-from utils import read_json
+from ai_documents.utils import read_json
 #all_res
 # Define hyperparameter space
 FOLDER_GROUND_TRUTHS = Path('data/performances_data/fleet_services_jsons')

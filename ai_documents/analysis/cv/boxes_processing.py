@@ -1,7 +1,7 @@
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
 
-from document_parsing import get_words_coordinates, remove_word, merge_word_with_following, convert_to_cartesian,find_next_right_word
+from ai_documents.analysis.cv.document_parsing import get_words_coordinates, remove_word, merge_word_with_following, convert_to_cartesian,find_next_right_word
 def run_doctr_model(img_path, **kwargs):
     ''' Load an image and run the model on it.'''
     img = DocumentFile.from_images(img_path)

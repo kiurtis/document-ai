@@ -22,6 +22,7 @@ class ResultValidator:
 
     def validate_quality(self):
         self.quality_is_ok = self.result['overall_quality'].lower() == 'yes'
+
     def validate_signatures(self):
         signature_block_2 = self.result['signature_and_stamp_block_2'] in ('both', 'signature')
         signature_block_4 = self.result['signature_and_stamp_block_4'] in ('both', 'signature')
@@ -96,8 +97,6 @@ class ResultValidator:
             self.refused_causes.append('block4_is_not_filled')
         if not self.block4_is_filled_by_company:
             self.refused_causes.append('block4_is_not_filled_by_company')
-
-
 
     def validate(self):
         self.validate_quality()

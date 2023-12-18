@@ -1,6 +1,5 @@
 import PIL
 import json
-import cv2
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,19 +7,15 @@ import os
 from loguru import logger
 from pathlib import Path
 
-
-
 #Importing functions
-from utils import get_result_template, has_non_none_attributes
-from template_matching_function import get_image_dimensions, draw_contour_rectangles_on_image, crop_blocks_in_image, arval_classic_divide_and_crop_block2, arval_classic_divide_and_crop_block4,\
+from ai_documents.utils import get_result_template, has_non_none_attributes
+from ai_documents.detection.template_matching import get_image_dimensions, crop_blocks_in_image, arval_classic_divide_and_crop_block2, arval_classic_divide_and_crop_block4,\
     find_top_and_bot_of_arval_classic_restitution, resize_arval_classic, get_block2_rectangle, get_block4_rectangle, draw_rectangles_and_save
-from sam import sam_pre_template_matching_function
-from pipeline import get_processed_boxes_and_words,postprocess_boxes_and_words_arval_classic_restitution
-from document_parsing import find_next_right_word
-from image_processing import get_image_orientation, rotate_image
-from gpt import build_block_checking_payload, request_completion, build_overall_quality_checking_payload, build_signature_checking_payload
-from plotting import plot_boxes_with_text
-from performance_estimation import has_found_box
+from ai_documents.detection.sam import sam_pre_template_matching_function
+from ai_documents.analysis.cv.boxes_processing import get_processed_boxes_and_words,postprocess_boxes_and_words_arval_classic_restitution
+from ai_documents.analysis.cv.document_parsing import find_next_right_word
+from ai_documents.analysis.lmm.gpt import build_block_checking_payload, request_completion, build_overall_quality_checking_payload, build_signature_checking_payload
+from ai_documents.plotting import plot_boxes_with_text
 
 
 class ArvalClassicDocumentAnalyzer:
