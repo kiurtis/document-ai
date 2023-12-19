@@ -1,6 +1,7 @@
 import os
 import click
 from pathlib import Path
+import json
 from loguru import logger
 from ai_documents.analysis.entities import ArvalClassicGPTDocumentAnalyzer
 from ai_documents.validation.entities import ResultValidator
@@ -32,8 +33,23 @@ def main(valet_name, from_concessionaire, to_concessionaire, input_file_path):
         document_analyzer.analyze()
         logger.info(f"Result: {document_analyzer.results}")
 
+
+
         result_validator = ResultValidator(document_analyzer.results, plate_number=plate_number, valet_name=valet_name, from_concessionaire=from_concessionaire, to_concessionaire=to_concessionaire)
         result_validator.validate()
+        logger.info(f"Document valid: {result_validator.validated}")
+
+        dict_to_save = document_analyzer.results.copy()
+        dict_to_save['refused_causes'] = result_validator.refused_causes
+        dict_to_save['Validated'] = result_validator.validated
+        # Save results as JSON
+        output_directory = Path(input_file_path).parent
+        json_output_path = output_directory / f"{file_name}_json.json"
+
+        with open(json_output_path, 'w') as json_file:
+            json.dump(dict_to_save, json_file, indent=4)
+            logger.info(f"Results saved to {json_output_path}")
+
 
     except Exception as e:
         logger.error(f"Error {e} while analyzing {file_name}")
