@@ -178,3 +178,111 @@ files_iterable = {file: all_documents[file] for file in files_to_test}.items()
 # Typologie d'erreur
 # - Could not find block 2
 # - Could not find block 4
+
+
+
+######
+
+import csv
+
+
+def read_csv(file_path):
+    data = {}
+    with open(file_path, newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            error_column = 'ground_truth' if 'ground_truth' in row else 'predicted_cause'
+            if error_column in row:
+                # Strip spaces and split the errors
+                errors = [error.strip() for error in row[error_column].replace('\n', '').split(',')]
+                data[row['document_name']] = set(errors)
+            else:
+                print(f"Missing '{error_column}' in row: {row}")  # For debugging
+    return data
+
+def compute_overall_metrics(ground_truth, predictions):
+    true_positives = 0
+    false_positives = 0
+    true_negatives = 0
+    false_negatives = 0
+
+    all_errors = set()
+    for errors in ground_truth.values():
+        all_errors.update(errors)
+    for errors in predictions.values():
+        all_errors.update(errors)
+
+    for doc_name, gt_errors in ground_truth.items():
+        pred_errors = predictions.get(doc_name, set())
+        for error in all_errors:
+            if error in gt_errors and error in pred_errors:
+                true_positives += 1
+            elif error not in gt_errors and error not in pred_errors:
+                true_negatives += 1
+            elif error in pred_errors and error not in gt_errors:
+                false_positives += 1
+            elif error not in pred_errors and error in gt_errors:
+                false_negatives += 1
+
+    return true_positives, false_positives, true_negatives, false_negatives
+
+# Load ground truth and predictions
+#ground_truth_path = 'results/Ground_truths.csv'  # Replace with your actual path
+#predictions_path = 'results/predictions_amiel.csv'    # Replace with your actual path
+
+#ground_truth_data = read_csv(ground_truth_path)
+#predictions_data = read_csv(predictions_path)
+
+# Compute metrics
+#tp, fp, tn, fn = compute_overall_metrics(ground_truth_data, predictions_data)
+#print('Overall metrics :')
+#print(f"True Positives: {tp}")
+#print(f"False Positives: {fp}")
+#print(f"True Negatives: {tn}")
+#print(f"False Negatives: {fn}")
+
+
+def compute_metrics_per_error(ground_truth, predictions):
+    metrics_per_error = {}
+
+    # Create a set of all unique error types from both ground truth and predictions
+    all_errors = set()
+    for errors in ground_truth.values():
+        all_errors.update(errors)
+    for errors in predictions.values():
+        all_errors.update(errors)
+
+    # Initialize metrics for each error
+    for error in all_errors:
+        if error:  # Skip empty error strings
+            metrics_per_error[error] = {'true_positive': 0, 'false_positive': 0, 'true_negative': 0, 'false_negative': 0}
+
+    # Compute metrics
+    for doc_name, gt_errors in ground_truth.items():
+        pred_errors = predictions.get(doc_name, set())
+
+        for error in all_errors:
+            if error:  # Skip empty error strings
+                if error in gt_errors and error in pred_errors:
+                    metrics_per_error[error]['true_positive'] += 1
+                elif error not in gt_errors and error not in pred_errors:
+                    metrics_per_error[error]['true_negative'] += 1
+                elif error in pred_errors and error not in gt_errors:
+                    metrics_per_error[error]['false_positive'] += 1
+                elif error not in pred_errors and error in gt_errors:
+                    metrics_per_error[error]['false_negative'] += 1
+
+    return metrics_per_error
+
+# Example usage
+#tp_fp_tn_fn_per_error = compute_metrics_per_error(ground_truth_data, predictions_data)
+
+#print('metrics per errors:')
+#print(tp_fp_tn_fn_per_error)
+# Display the results
+#for error, metrics in tp_fp_tn_fn_per_error.items():
+#    print(f"Error: {error}")
+#    print(f" True Positives: {metrics['true_positive']}")
+#    print(f" False Positives: {metrics['false_positive']}")
+#    print(f" True Negatives: {metrics['true_negative']}")
+#    print(f" False Negatives: {metrics['false_negative']}\n")
