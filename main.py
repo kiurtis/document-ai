@@ -10,7 +10,7 @@ from ai_documents.validation.entities import ResultValidator
 @click.option('--valet_name', default=None, help='Valet name.')
 @click.option('--from_concessionaire', default=None, help='From concessionaire.')
 @click.option('--to_concessionaire', default=None, help='To concessionaire.')
-@click.option('--input_file_path', default='data/performances_data/invalid_data/arval_classic_restitution_images/FY-915-LM_PVderestitution.jpeg', help='Path to the input file.')
+@click.option('--input_file_path', help='Path to the input file.')
 
 def main(valet_name, from_concessionaire, to_concessionaire, input_file_path):
     path = Path(input_file_path)
