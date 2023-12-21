@@ -65,8 +65,7 @@ class ResultValidator:
     def validate_block4_is_filled_by_company(self, distance_margin=4):
         company_name = self.result['block_4']['Société']
         driver_name = self.result['block_4']['Nom et prénom']
-        self.block4_is_filled_by_company = company_name not in ["<EMPTY>", "<NOT_FOUND>"] \
-                                           and l_distance(company_name, "Pop Valet") > distance_margin
+        self.block4_is_filled_by_company = l_distance(company_name, "Pop Valet") > distance_margin
         if self.valet_name is not None:
             self.block4_is_filled_by_company = self.block4_is_filled_by_company and (driver_name != self.valet_name)
 
