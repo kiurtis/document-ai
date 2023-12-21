@@ -136,46 +136,51 @@ def compute_metrics_per_error(ground_truth, predictions):
     for errors in predictions.values():
         all_errors.update(errors)
 
+    all_errors.remove("")
+
     # Initialize metrics for each error
-    for error in all_errors:
-        if error:  # Skip empty error strings
-            metrics_per_error[error] = {'true_positive': 0, 'false_positive': 0, 'true_negative': 0, 'false_negative': 0}
+    for error_type in all_errors:
+        if error_type:  # Skip empty error strings
+            metrics_per_error[error_type] = {'true_positive': 0, 'false_positive': 0, 'true_negative': 0, 'false_negative': 0}
 
     # Compute metrics
     for doc_name, gt_errors in ground_truth.items():
         pred_errors = predictions.get(doc_name, set())
 
-        for error in all_errors:
-            if error:  # Skip empty error strings
-                if error in gt_errors and error in pred_errors:
-                    metrics_per_error[error]['true_positive'] += 1
-                elif error not in gt_errors and error not in pred_errors:
-                    metrics_per_error[error]['true_negative'] += 1
-                elif error in pred_errors and error not in gt_errors:
-                    metrics_per_error[error]['false_positive'] += 1
-                elif error not in pred_errors and error in gt_errors:
-                    metrics_per_error[error]['false_negative'] += 1
+        for error_type in all_errors:
+            if error_type:  # Skip empty error strings
+                if "quality_is_not_ok" in gt_errors and error_type != "quality_is_not_ok":
+                    continue # Skip all errors except "quality_is_not_ok" if the document quality was indeed bad
+
+                if (error_type in gt_errors) and (error_type in pred_errors):
+                    metrics_per_error[error_type]['true_positive'] += 1
+                elif (error_type not in gt_errors) and (error_type not in pred_errors):
+                    metrics_per_error[error_type]['true_negative'] += 1
+                elif (error_type in pred_errors) and (error_type not in gt_errors):
+                    metrics_per_error[error_type]['false_positive'] += 1
+                elif (error_type not in pred_errors) and (error_type in gt_errors):
+                    metrics_per_error[error_type]['false_negative'] += 1
+
+    for error_type, metrics in metrics_per_error.items():
+        if error_type:  # Skip empty error strings
+            total = metrics['true_positive'] + metrics['false_positive'] + metrics['true_negative'] + metrics[
+                'false_negative']
+            if total > 0:
+                accuracy = (metrics['true_positive'] + metrics['true_negative']) / total
+                metrics['accuracy'] = accuracy
+            else:
+                metrics['accuracy'] = 0  # Handling division by zero if there are no observations
 
     return metrics_per_error
 
 
 if __name__ == '__main__':
 
-    RUN_ANALYSIS = True
+    RUN_ANALYSIS = False
     RUN_METRICS_COMPUTATION = True
 
 if RUN_ANALYSIS:
-    # +
-    # random hyper parameter:
-    hyperparameters = {'det_arch': "db_resnet50",
-                       'reco_arch': "crnn_mobilenet_v3_large",
-                       'pretrained': True,
-                       'distance_margin': 5,  # find_next_right_word for words_similarity
-                       'max_distance': 400,  # find_next_right_word
-                       'minimum_overlap': 10  # find_next_right_word for _has_overlap
-                       }
 
-    # +
     # Analyze all documents and compare with the ground truth
     full_result_analysis = pd.DataFrame(
         columns=['document_name', 'true_status', 'predicted_status', 'true_cause', 'predicted_cause'])
@@ -199,18 +204,8 @@ if RUN_ANALYSIS:
                             "GB-884-EE_PV.jpeg",
                             "GF-784-CM_PVARVAL.jpeg"]
 
-    # files_to_exclude = [] + bad_orientation_file  # Could depends on different cases
-
     files_to_test = all_documents.keys()
 
-    files_to_test = ["FF-495-RB_20230823_101857.jpeg", ]
-    failing_file_explained = ['EM-272-VS_Document_p1.jpeg'  # Un doigt bloque la reconnaissance d'un des templates
-                              ]
-    working_files = pd.read_csv('results/full_result_analysis_20231208_192447.csv')['document_name'].tolist()
-    working_files += ["EN-869-YH_Pvreprise_p1.jpeg",
-                      'EC-609-NN_PVR.jpeg',
-                      'ET-679-SV_PVrestitutionArval.jpeg']
-    files_to_exclude = [] + working_files + failing_file_explained
 
     files_to_exclude = []
     files_to_iterate = {file: all_documents[file]
@@ -220,7 +215,9 @@ if RUN_ANALYSIS:
     for name, info in tqdm(files_to_iterate):
 
         try:
-            document_analyzer = ArvalClassicGPTDocumentAnalyzer(name, info['path'], hyperparameters)
+            document_analyzer = ArvalClassicGPTDocumentAnalyzer(name, info['path'],
+                                                                #hyperparameters
+                                                                )
             document_analyzer.analyze()
             # document_analyzer.plot_blocks()
             logger.info(f"Result: {document_analyzer.results}")
@@ -240,7 +237,7 @@ if RUN_ANALYSIS:
                                               }, index=[0])
                                               ])
         except Exception as e:
-            raise e
+            #raise e
             pd.concat([full_result_analysis,
                        pd.DataFrame({
                            'document_name': [name],
@@ -257,7 +254,6 @@ if RUN_ANALYSIS:
     full_result_analysis.to_csv(f'results/full_result_analysis_{dt}.csv', index=False)
 
 if RUN_METRICS_COMPUTATION:
-
 
     # Load ground truth and predictions
     ground_truth_path = 'results/invalid_data_ground_truth.csv'  # Replace with your actual path
@@ -286,4 +282,5 @@ if RUN_METRICS_COMPUTATION:
         print(f" True Positives: {metrics['true_positive']}")
         print(f" False Positives: {metrics['false_positive']}")
         print(f" True Negatives: {metrics['true_negative']}")
-        print(f" False Negatives: {metrics['false_negative']}\n")
+        print(f" False Negatives: {metrics['false_negative']}")
+        print(f" Accuracy: {metrics['accuracy']:0.02f}\n")

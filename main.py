@@ -28,7 +28,9 @@ def main(valet_name, from_concessionaire, to_concessionaire, input_file_path):
     }
 
     try:
-        document_analyzer = ArvalClassicGPTDocumentAnalyzer(file_name, input_file_path, hyperparameters)
+        document_analyzer = ArvalClassicGPTDocumentAnalyzer(file_name, input_file_path,
+                                                            hyperparameters
+                                                            )
         document_analyzer.analyze()
         logger.info(f"Result: {document_analyzer.results}")
 

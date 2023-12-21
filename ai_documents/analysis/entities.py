@@ -34,7 +34,7 @@ from ai_documents.exceptions import DocumentAnalysisError, LMMProcessingError
 
 
 class ArvalClassicDocumentAnalyzer:
-    def __init__(self, document_name, path_to_document, hyperparameters):
+    def __init__(self, document_name, path_to_document, hyperparameters=None):
         self.document_name = document_name
         self.path_to_document = path_to_document
         self.results = {}  # To be filled with results of analysis
@@ -408,7 +408,7 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
                 #logger.warning(f'Could not process {attribute} response: {e}')
                 #return None
         else:
-            raise LMMProcessingError(f'Could not process {attribute} response: {e}')
+            raise LMMProcessingError(f'Could not process {attribute} response: {response["error"]["code"]}')
             #logger.warning(f'Could not process {attribute} response: {response["error"]["code"]}')
             #return None
 
@@ -497,5 +497,5 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
             self.results['signature_and_stamp_block_2'] = self.signature_and_stamp_block_2
             self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_block_4
         except Exception as e:
-            raise DocumentAnalysisError(f'Could not analyze document {self.document_name}: {e}')
+            raise DocumentAnalysisError(f'Could not analyze document {self.document_name}') from e
 

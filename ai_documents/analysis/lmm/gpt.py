@@ -61,7 +61,7 @@ def build_block_checking_payload(keys, image_path):
     return payload
 
 
-def number_plate_check_gpt(plate_number, image_path):
+def number_plate_check_gpt(plate_number, image_path, with_few_shots=False):
 
     # Read and encode the image in base64 format
     base64_image = encode_image(image_path)
