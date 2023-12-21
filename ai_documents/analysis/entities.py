@@ -499,3 +499,4 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         except Exception as e:
             raise DocumentAnalysisError(f'Could not analyze document {self.document_name}: {e}')
 
+
