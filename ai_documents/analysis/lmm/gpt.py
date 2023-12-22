@@ -45,7 +45,7 @@ def build_block_checking_payload(keys, image_path):
                        ' and the corresponding values. Dont write anything else. If you dont find a key on the image, set the value to "<NOT_FOUND>".' \
                        'If you find the key but no value is associated, set the value to "<EMPTY>". No other value is accepted.'
     content.append({"type": "text", "text": dict_instruction})
-    logger.info(content)
+    logger.info(f"Block 2 content:\n{content}")
 
     # Add the image part
     content.append({
