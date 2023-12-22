@@ -497,3 +497,4 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_block_4
 
 
+
