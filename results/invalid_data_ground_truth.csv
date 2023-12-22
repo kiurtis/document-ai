@@ -5,7 +5,7 @@ serial_number_is_not_filled"
 ED-913-BL_pv_de_restitution__p1.jpeg,"block2_is_not_filled,
 block4_is_not_filled,
 restitution_date_is_not_filled,
-name_is_not_filled,
+driver_name_is_not_filled,
 telephone_is_not_filled,
 email_is_not_filled"
 EH-082-TV_PV_de_restitution_.jpeg,"number_plate_is_not_right,
@@ -20,7 +20,7 @@ telephone_is_not_filled"
 EM-272-VS_Document_p1.jpeg,"number_plate_is_not_filled,
 block4_is_not_filled,
 stamps_are_not_ok,
-name_is_not_filled,
+driver_name_is_not_filled,
 email_is_not_filled,
 telephone_is_not_filled"
 EN-869-YH_Document_p1.jpeg,quality_is_not_ok
@@ -56,7 +56,7 @@ EZ-561-VR_PV_ARVAL.jpeg,"stamps_are_not_ok,
 signatures_are_not_ok,
 block4_is_not_filled,
 block2_is_not_filled,
-name_is_not_filled,
+driver_name_is_not_filled,
 telephone_is_not_filled,
 restitution_date_is_not_filled,
 serial_number_is_not_filled"
@@ -78,7 +78,7 @@ stamps_are_not_ok,
 signatures_are_not_ok"
 FA-772-LB_Pv.jpeg,"quality_is_not_ok,
 block4_is_not_filled,
-name_is_not_filled,
+driver_name_is_not_filled,
 email_is_not_filled,
 telephone_is_not_filled"
 FB-568-VP_ARVAL_PV.jpeg,quality_is_not_ok
@@ -116,11 +116,11 @@ FF-724-NB_pV_restitution__p1.jpeg,"quality_is_not_ok,
 email_is_not_filled,
 serial_number_is_not_filled"
 FG-018-EB_PVR_p1.jpeg,"block4_is_not_filled,
-name_is_not_filled,
+driver_name_is_not_filled,
 email_is_not_filled,
 telephone_is_not_filled"
 FG-767-EX_Pv_de_livraison_.jpeg,"block4_is_not_filled,
-name_is_not_filled,
+driver_name_is_not_filled,
 email_is_not_filled,
 telephone_is_not_filled"
 FG-882-EW_PV.jpeg,"block4_is_not_filled,
