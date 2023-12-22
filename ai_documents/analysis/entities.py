@@ -30,11 +30,11 @@ from ai_documents.analysis.cv.document_parsing import find_next_right_word
 from ai_documents.analysis.lmm.gpt import build_block_checking_payload, request_completion, \
     build_overall_quality_checking_payload, build_signature_checking_payload, number_plate_check_gpt
 from ai_documents.plotting import plot_boxes_with_text
-from ai_documents.exceptions import DocumentAnalysisError, LMMProcessingError
+from ai_documents.exceptions import DocumentAnalysisError, LMMProcessingError, BlockDetectionError
 
 
 class ArvalClassicDocumentAnalyzer:
-    def __init__(self, document_name, path_to_document, hyperparameters):
+    def __init__(self, document_name, path_to_document, hyperparameters=None):
         self.document_name = document_name
         self.path_to_document = path_to_document
         self.results = {}  # To be filled with results of analysis
@@ -166,7 +166,7 @@ class ArvalClassicDocumentAnalyzer:
             blocks = [block2, block4]
 
         except Exception as e:
-            logger.error(f"An error occurred trying to get blocks 2 and 4 of {self.document_name}:{e}")
+            raise BlockDetectionError(f"An error occurred trying to get blocks 2 and 4 of {self.document_name}: {e}")
 
         try:
             # Cropping and saving the blocks images in the tmp folder
@@ -384,8 +384,8 @@ class ArvalClassicDocumentAnalyzer:
             self.results['File Name'] = self.document_name
             self.results['block_2'] = self.result_json_block_2
             self.results['block_4'] = self.result_json_block_4
-        except:
-            raise DocumentAnalysisError(f'Could not analyze {self.document_name}')
+        except Exception as e:
+            raise DocumentAnalysisError(f'Could not analyze {self.document_name}') from e
 
     def save_results(self):
         self.results_json = json.dumps(self.results)
@@ -408,7 +408,7 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
                 #logger.warning(f'Could not process {attribute} response: {e}')
                 #return None
         else:
-            raise LMMProcessingError(f'Could not process {attribute} response: {e}')
+            raise LMMProcessingError(f'Could not process {attribute} response: {response["error"]["code"]}')
             #logger.warning(f'Could not process {attribute} response: {response["error"]["code"]}')
             #return None
 
@@ -490,13 +490,11 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         self.signature_and_stamp_block_4 = self.safe_process_response(response, 'signature_and_stamp_4')
 
     def analyze(self):
-        try:
-            super().analyze()
-            self.results['overall_quality'] = self.overall_quality
+        super().analyze()
+        self.results['overall_quality'] = self.overall_quality
 
-            self.results['signature_and_stamp_block_2'] = self.signature_and_stamp_block_2
-            self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_block_4
-        except Exception as e:
-            raise DocumentAnalysisError(f'Could not analyze document {self.document_name}: {e}')
+        self.results['signature_and_stamp_block_2'] = self.signature_and_stamp_block_2
+        self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_block_4
+
 
 

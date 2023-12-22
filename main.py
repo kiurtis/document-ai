@@ -33,7 +33,10 @@ def main(valet_name, from_concessionaire, to_concessionaire, input_file_path,pla
 
     try:
 
-        document_analyzer = ArvalClassicGPTDocumentAnalyzer(file_name, input_file_path, hyperparameters)
+        document_analyzer = ArvalClassicGPTDocumentAnalyzer(file_name, input_file_path,
+                                                            hyperparameters
+                                                            )
+
         document_analyzer.analyze()
 
         result_validator = ResultValidator(document_analyzer.results, plate_number=plate_number,

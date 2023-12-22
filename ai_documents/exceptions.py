@@ -2,6 +2,8 @@
 
 class PageDetectionError(Exception):
     pass
+class BlockDetectionError(Exception):
+    pass
 
 class TemplateMatchingError(Exception):
     pass
