@@ -12,7 +12,7 @@ class ResultValidator:
         self.quality_is_ok = True # Only for ArvalClassicGPTDocumentAnalyzer
         self.signatures_are_ok = True
         self.stamps_are_ok = True
-        self.mileage_is_ok = True
+        self.mileage_is_filled = True
         self.number_plate_is_filled = True
         self.number_plate_is_right = True
         self.block4_is_filled = True
@@ -44,13 +44,13 @@ class ResultValidator:
             self.stamps_are_ok = False
 
     def validate_mileage(self):
-        self.mileage_is_ok = self.result['block_2']['Kilométrage'] not in ["<EMPTY>", "<NOT_FOUND>"]
+        self.mileage_is_filled = self.result['block_2']['Kilométrage'] not in ["<EMPTY>", "<NOT_FOUND>"]
 
     def validate_restitution_date(self):
-        self.restitution_date_is_ok = self.result['block_2']['Restitué le'] not in ["<EMPTY>", "<NOT_FOUND>"]
+        self.restitution_date_is_filled = self.result['block_2']['Restitué le'] not in ["<EMPTY>", "<NOT_FOUND>"]
 
     def validate_serial_number(self):
-        self.serial_number_is_ok = self.result['block_2']['N° de série'] not in ["<EMPTY>", "<NOT_FOUND>"]
+        self.serial_number_is_filled = self.result['block_2']['N° de série'] not in ["<EMPTY>", "<NOT_FOUND>"]
 
     def validate_number_plate_is_filled(self):
         self.number_plate_is_filled = self.result['block_2']['Immatriculé'] not in ["<EMPTY>", "<NOT_FOUND>"]
@@ -60,26 +60,28 @@ class ResultValidator:
         self.number_plate_is_right = l_distance(detected_plate_number, self.plate_number) < 3
 
     def validate_block2_is_filled(self):
-        self.block2_is_filled = self.number_plate_is_filled & self.mileage_is_ok & self.restitution_date_is_ok & self.serial_number_is_ok
+        self.block2_is_filled = self.number_plate_is_filled & self.mileage_is_filled & self.restitution_date_is_filled &\
+                                self.serial_number_is_filled
 
     def validate_block4_is_filled_by_company(self, distance_margin=4):
         company_name = self.result['block_4']['Société']
         driver_name = self.result['block_4']['Nom et prénom']
-        self.block4_is_filled_by_company = company_name not in ["<EMPTY>", "<NOT_FOUND>"] \
-                                           and l_distance(company_name, "Pop Valet") > distance_margin
+        self.block4_is_filled_by_company = l_distance(company_name, "Pop Valet") > distance_margin
         if self.valet_name is not None:
             self.block4_is_filled_by_company = self.block4_is_filled_by_company and (driver_name != self.valet_name)
 
     def validate_block4_is_filled(self):
-        name_condition = self.result['block_4']['Nom et prénom'] not in ["<EMPTY>", "<NOT_FOUND>"]
-        coordinates_condition = self.result['block_4']['Tél'] not in ["<EMPTY>", "<NOT_FOUND>"] and \
-                                self.result['block_4']['E-mail'] not in ["<EMPTY>", "<NOT_FOUND>"]
+        self.driver_name_is_filled = self.result['block_4']['Nom et prénom'] not in ["<EMPTY>", "<NOT_FOUND>"]
+        self.telephone_is_filled = self.result['block_4']['Tél'] not in ["<EMPTY>", "<NOT_FOUND>"]
+        self.mail_is_filled = self.result['block_4']['E-mail'] not in ["<EMPTY>", "<NOT_FOUND>"]
 
         if self.to_concessionaire:
             concessionaire_condition = self.result['block_4']['Société'] not in ["<EMPTY>", "<NOT_FOUND>"]
         else:
             concessionaire_condition = True
-        self.block4_is_filled = coordinates_condition and name_condition and concessionaire_condition
+
+        self.block4_is_filled = (self.telephone_is_filled or self.mail_is_filled) and self.driver_name_is_filled and \
+                                concessionaire_condition
 
     def gather_refused_motivs(self):
         # Initialize an empty list to store the names of variables that are False
@@ -92,7 +94,7 @@ class ResultValidator:
             self.refused_causes.append('signatures_are_not_ok')
         if not self.stamps_are_ok:
             self.refused_causes.append('stamps_are_not_ok')
-        if not self.mileage_is_ok:
+        if not self.mileage_is_filled:
             self.refused_causes.append('mileage_is_not_ok')
         if not self.number_plate_is_filled:
             self.refused_causes.append('number_plate_is_not_filled')
@@ -122,10 +124,10 @@ class ResultValidator:
 
             logger.info(f"Refused causes: {self.refused_causes}")
 
-            self.validated = self.stamps_are_ok and self.signatures_are_ok and self.mileage_is_ok \
+            self.validated = self.stamps_are_ok and self.signatures_are_ok and self.mileage_is_filled \
                              and self.number_plate_is_filled and self.number_plate_is_right and self.block4_is_filled \
-                             and self.block4_is_filled_by_company and self.restitution_date_is_ok \
-                             and self.serial_number_is_ok
+                             and self.block4_is_filled_by_company and self.restitution_date_is_filled \
+                             and self.serial_number_is_filled
         except Exception as e:
             raise ResultValidationError("Error while validating the result") from e
         return self.validated
