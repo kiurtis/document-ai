@@ -1,0 +1,5 @@
+results/*
+notebooks/*ipynb
+data/old/*
+.idea
+.env
