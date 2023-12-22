@@ -39,8 +39,8 @@ invalid_restitutions_infos['formatted_filename'] = invalid_restitutions_infos['f
 #Getting all the documents path and name
 image_extensions = ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.bmp']
 all_documents = {}
-for status in [#'valid',
-            'invalid'
+for status in ['valid'#,
+            #'invalid'
                ]:
     image_directory = Path(f'data/performances_data/{status}_data/arval_classic_restitution_images/')
     image_files = os.listdir(image_directory)
@@ -74,7 +74,6 @@ for status in [#'valid',
             print(file_path)
             print(all_documents[file_name])
             print("\n\n")
-
 
 
 # Typologie d'erreur
@@ -198,6 +197,7 @@ if __name__ == '__main__':
 
     # Load ground truth and predictions
     ground_truth_path = 'results/invalid_data_ground_truth.csv'  # Replace with your actual path
+    ground_truth_path = 'results/valid_data_ground_truth.csv'  # Replace with your actual path
     ground_truth_data = pd.read_csv(ground_truth_path)
 
     if RUN_ANALYSIS:
@@ -208,6 +208,7 @@ if __name__ == '__main__':
         # for name, info in all_documents.items():
 
         files_to_test = ground_truth_data['document_name'].values
+
         #files_to_test = ["ES-337-RE_PVR.jpeg"]
         files_to_exclude = ['EM-272-VS_Document_p1.jpeg', # Thumb disturbance
                             'EZ-912-QS_PV_de_reprise_p2.jpeg',# Content policy violation
@@ -230,6 +231,7 @@ if __name__ == '__main__':
                 document_analyzer = ArvalClassicGPTDocumentAnalyzer(name, info['path'],
                                                                     #hyperparameters
                                                                     )
+
                 document_analyzer.analyze()
                 # document_analyzer.plot_blocks()
                 logger.info(f"Result: {document_analyzer.results}")
@@ -268,7 +270,7 @@ if __name__ == '__main__':
     if RUN_METRICS_COMPUTATION:
 
         #predictions_path = 'results/predictions_amiel.csv'    # Replace with your actual path
-        predictions_path = 'results/full_result_analysis_20231221_175556.csv'
+        predictions_path = 'results/full_result_analysis_20231222_192106.csv'
         #predictions_path = saving_path
         predictions_data = pd.read_csv(predictions_path)
         merged_data = pd.merge(ground_truth_data, predictions_data, on='document_name', how='inner')
