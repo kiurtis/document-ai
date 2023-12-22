@@ -172,22 +172,54 @@ def compute_metrics_per_error(ground_truth, predictions):
 
     return metrics_per_error
 
+def expand_df(df, all_causes):
+    expanded_data = []
+    for _, row in df.iterrows():
+        for cause in all_causes:
+            expanded_data.append({
+                'document_name': row['document_name'],
+                'cause': cause,
+                'ground_truth': cause in row['ground_truth'],
+                'predicted_cause': cause in row['predicted_cause']
+            })
+    return pd.DataFrame(expanded_data)
 
-bad_orientation_file = ["EC-609-NN_PVR.jpeg",
-                            "EH-082-TV_PVderestitution.jpeg",
-                            "ET-679-SV_PVrestitutionArval.jpeg",
-                            "EZ-561-VR_PVARVAL.jpeg",
-                            "FA-580-FY_Pvderestitution.jpeg",
-                            "FA-772-LB_Pv.jpeg",
-                            "FF-495-RB_20230823_101857.jpeg",
-                            "FG-767-EX_Pvdelivraisonv.jpeg",
-                            "FG-882-EW_PV.jpeg",
-                            "FH-639-SE_Pvrestitution.jpeg",
-                            "FL-147-SN_Pvarval.jpeg",
-                            "FN-117-GQ_PVARVAL.jpeg",
-                            "FY-915-LM_PVderestitution.jpeg",
-                            "GB-884-EE_PV.jpeg",
-                            "GF-784-CM_PVARVAL.jpeg"]
+
+def calculate_metrics(expanded_df, cause):
+    if cause != 'quality_is_not_ok':  # In this case, we remove the bad quality documents
+        good_quality_condition = expanded_df['good_quality_document']
+    else:
+        good_quality_condition = True
+
+    tp_conditions = (expanded_df['cause'] == cause) & (expanded_df['ground_truth']) & (
+        expanded_df['predicted_cause'])
+    TP = len(expanded_df.loc[tp_conditions & good_quality_condition])
+
+    fp_conditions = (expanded_df['cause'] == cause) & (~expanded_df['ground_truth']) & (
+        expanded_df['predicted_cause'])
+    FP = len(expanded_df.loc[fp_conditions & good_quality_condition])
+
+    tn_conditions = (expanded_df['cause'] == cause) & (~expanded_df['ground_truth']) & (
+        ~expanded_df['predicted_cause'])
+    TN = len(expanded_df.loc[tn_conditions & good_quality_condition])
+
+    fn_conditions = (expanded_df['cause'] == cause) & (expanded_df['ground_truth']) & (
+        ~expanded_df['predicted_cause'])
+    FN = len(expanded_df.loc[fn_conditions & good_quality_condition])
+
+    accuracy = (TP + TN) / (TP + FP + TN + FN)
+    recall = TP / (TP + FN) if (TP + FN) != 0 else 0
+    precision = TP / (TP + FP) if (TP + FP) != 0 else 0
+
+    return accuracy, recall, precision, (TP, FP, TN, FN)
+
+
+def get_false_positives_negatives(expanded_df, cause):
+    error_df = expanded_df[
+        (expanded_df['cause'] == cause) & ((expanded_df['ground_truth']) != (expanded_df['predicted_cause']))].copy()
+    error_df['error_type'] = error_df.apply(lambda x: 'FP' if x['predicted_cause'] else 'FN', axis=1)
+    return error_df
+
 if __name__ == '__main__':
 
     RUN_ANALYSIS = False
@@ -312,67 +344,17 @@ if __name__ == '__main__':
         # List of all unique failure causes
         all_causes = set(
             cause for sublist in df.ground_truth.tolist() + df.predicted_cause.tolist() for cause in sublist)
-        def expand_df(df, all_causes):
-            expanded_data = []
-            for _, row in df.iterrows():
-                for cause in all_causes:
-                    expanded_data.append({
-                        'document_name': row['document_name'],
-                        'cause': cause,
-                        'ground_truth': cause in row['ground_truth'],
-                        'predicted_cause': cause in row['predicted_cause']
-                    })
-            return pd.DataFrame(expanded_data)
-
 
         expanded_df = expand_df(df, all_causes)
 
         # Tag documents with bad quality
         good_quality_documents = expanded_df.loc[
-            (expanded_df['cause'] != 'quality_is_not_ok') & (expanded_df['ground_truth'])].document_name.tolist()
+            (expanded_df['cause'] != 'quality_is_not_ok') &
+            (expanded_df['ground_truth'])].document_name.tolist()
 
         expanded_df['good_quality_document'] = expanded_df['document_name'].isin(good_quality_documents)
 
-        # Function to calculate metrics
-        def calculate_metrics(expanded_df, cause):
-            if cause != 'quality_is_not_ok': # In this case, we remove the bad quality documents
-                good_quality_condition = expanded_df['good_quality_document']
-            else:
-                good_quality_condition = True
-
-
-            tp_conditions = (expanded_df['cause'] == cause) & (expanded_df['ground_truth']) & (
-            expanded_df['predicted_cause'])
-            TP = len(expanded_df.loc[tp_conditions & good_quality_condition])
-
-            fp_conditions = (expanded_df['cause'] == cause) & (~expanded_df['ground_truth']) & (
-            expanded_df['predicted_cause'])
-            FP = len(expanded_df.loc[fp_conditions & good_quality_condition])
-
-            tn_conditions = (expanded_df['cause'] == cause) & (~expanded_df['ground_truth']) & (
-                ~expanded_df['predicted_cause'])
-            TN = len(expanded_df.loc[tn_conditions & good_quality_condition])
-
-            fn_conditions = (expanded_df['cause'] == cause) & (expanded_df['ground_truth']) & (
-                ~expanded_df['predicted_cause'])
-            FN = len(expanded_df.loc[fn_conditions & good_quality_condition])
-
-            accuracy = (TP + TN) / (TP + FP + TN + FN)
-            recall = TP / (TP + FN) if (TP + FN) != 0 else 0
-            precision = TP / (TP + FP) if (TP + FP) != 0 else 0
-
-            return accuracy, recall, precision, (TP, FP, TN, FN)
-
-
-        # Function to get specific false positives/negatives
-        def get_false_positives_negatives(expanded_df, cause):
-            error_df = expanded_df[
-                (expanded_df['cause'] == cause) & ((expanded_df['ground_truth']) != (expanded_df['predicted_cause']))].copy()
-            error_df['error_type'] = error_df.apply(lambda x: 'FP' if x['predicted_cause'] else 'FN', axis=1)
-            return error_df
-
-        # Example usage
-        for cause in all_causes:
+        for cause in sorted(all_causes):
             accuracy, recall, precision, (TP, FP, TN, FN) = calculate_metrics(expanded_df, cause)
             error_df = get_false_positives_negatives(expanded_df, cause)
             print(f"Error: {cause}")

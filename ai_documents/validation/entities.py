@@ -106,7 +106,12 @@ class ResultValidator:
             self.refused_causes.append('block4_is_not_filled_by_company')
         if not self.block2_is_filled:
             self.refused_causes.append('block2_is_not_filled')
-
+        if not self.telephone_is_filled: # Not a problem if the email is filled
+            self.refused_causes.append('telephone_is_not_filled')
+        if not self.block2_is_filled: # Not a problem if the telephone is filled
+            self.refused_causes.append('email_is_not_filled')
+        if not self.driver_name_is_filled:
+            self.refused_causes.append('driver_name_is_not_filled')
     def validate(self):
         try:
             self.validate_quality()
