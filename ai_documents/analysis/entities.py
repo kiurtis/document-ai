@@ -441,9 +441,7 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
             self.result_json_block_2 = {'block_2': {"Immatriculé": '<NOT_FOUND>',
                                                     "Kilométrage": '<NOT_FOUND>',
                                                     "Restitué le": '<NOT_FOUND>',
-                                                    "Numéro de série": '<NOT_FOUND>',
-                                                    "Modèle": '<NOT_FOUND>',
-                                                    "Couleur": '<NOT_FOUND>'}}
+                                                    "Numéro de série": '<NOT_FOUND>'}}
 
 
         #Litle gpt hack for number_plate
