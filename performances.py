@@ -367,7 +367,7 @@ if __name__ == '__main__':
         # Function to get specific false positives/negatives
         def get_false_positives_negatives(expanded_df, cause):
             error_df = expanded_df[
-                (expanded_df['cause'] == cause) & ((expanded_df['ground_truth']) != (expanded_df['predicted_cause']))]
+                (expanded_df['cause'] == cause) & ((expanded_df['ground_truth']) != (expanded_df['predicted_cause']))].copy()
             error_df['error_type'] = error_df.apply(lambda x: 'FP' if x['predicted_cause'] else 'FN', axis=1)
             return error_df
 
