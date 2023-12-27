@@ -19,7 +19,8 @@ from ai_documents.analysis.cv.boxes_processing import get_processed_boxes_and_wo
     postprocess_boxes_and_words_arval_classic_restitution
 from ai_documents.analysis.cv.document_parsing import find_next_right_word
 from ai_documents.analysis.lmm.gpt import build_block_checking_payload, request_completion, \
-    build_overall_quality_checking_payload, build_signature_checking_payload, number_plate_check_gpt
+    build_overall_quality_checking_payload, build_signature_checking_payload, number_plate_check_gpt, \
+    build_block4_checking_payload
 from ai_documents.plotting import plot_boxes_with_text
 from ai_documents.exceptions import DocumentAnalysisError, LMMProcessingError, BlockDetectionError
 
@@ -30,6 +31,7 @@ class ArvalClassicDocumentAnalyzer:
         self.path_to_document = path_to_document
         self.results = {}  # To be filled with results of analysis
         self.results['details'] = {}
+
         self.folder_path = Path(self.path_to_document).parent  # Folder where the file is
         self.tmp_folder_path = self.folder_path / "tmp" / self.document_name.split(".")[0] # Folder where we'll store the blocks
         self.hyperparameters = hyperparameters
@@ -286,6 +288,7 @@ class ArvalClassicDocumentAnalyzer:
             if isinstance(self.result_json_block_2[key_word], dict):
                 self.result_json_block_2[key_word] = self.result_json_block_2[key_word]['next'][1]
 
+        self.results['block_2'] = self.result_json_block_2
 
 
     def analyze_block4_text(self ,block4_text_image_path,verbose=False ,plot_boxes=False):
@@ -325,6 +328,8 @@ class ArvalClassicDocumentAnalyzer:
             if isinstance(self.result_json_block_4[key_word], dict):
                 self.result_json_block_4[key_word] = self.result_json_block_4[key_word]['next'][1]
 
+
+        self.results['block_4'] = self.result_json_block_4
 
     def analyze_block2_signature_and_stamp(self,block_2_sign_path):
         raise NotImplementedError
@@ -371,10 +376,7 @@ class ArvalClassicDocumentAnalyzer:
             logger.info(f'Analyzing block 4...')
             self.analyze_block4()
 
-            self.results = {}
-            self.results['File Name'] = self.document_name
-            self.results['block_2'] = self.result_json_block_2
-            self.results['block_4'] = self.result_json_block_4
+
         except Exception as e:
             raise DocumentAnalysisError(f'Could not analyze {self.document_name}') from e
 
@@ -403,17 +405,19 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
             #logger.warning(f'Could not process {attribute} response: {response["error"]["code"]}')
             #return None
 
-    def analyze_block4_text(self,block4_text_image_path, verbose=False, plot_boxes=False):
+    def analyze_block4_text(self, block4_text_image_path, verbose=False, plot_boxes=False):
         if plot_boxes:
             image = PIL.Image.open(block4_text_image_path)
             plt.figure(figsize=(15, 15))
             plt.imshow(image)
 
         # Plot the block4
-        payload = build_block_checking_payload(keys=self.template['block_4'],
-                                               image_path=block4_text_image_path)
+        #payload = build_block_checking_payload(keys=self.template['block_4'],
+        #                                       image_path=block4_text_image_path)
+        payload = build_block4_checking_payload(image_path=block4_text_image_path)
 
         response = request_completion(payload)
+        logger.info(f'Block 4 response: {response}')
         self.result_json_block_4 = self.safe_process_response(response, 'result_json_block_4')
         if self.result_json_block_4 is None:
             self.result_json_block_4 = {'block_4': {'Nom et prénom': '<NOT_FOUND>',
@@ -421,6 +425,8 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
                                                     'Tél': '<NOT_FOUND>',
                                                     'le': '<NOT_FOUND>',
                                                     'Société': '<NOT_FOUND>'}}
+
+        self.results['block_4'] = self.result_json_block_4
 
     def analyze_block2_text(self, block2_text_image_path, verbose=False, plot_boxes=False):
         logger.info(f'Analyzing block 2 text...')
@@ -455,19 +461,23 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         logger.info(f'GPT plate number : {plate_number_GPT}')
         logger.info(f'{self.result_json_block_2["Immatriculé"]}')
 
+        self.results['block_2'] = self.result_json_block_2
+
     def assess_overall_quality(self):
         payload = build_overall_quality_checking_payload(image_path=self.path_to_document)
         response = request_completion(payload)
 
         self.overall_quality = self.safe_process_response(response, 'overall_quality')
+        self.results['overall_quality'] = self.overall_quality
 
-    def analyze_block2_signature_and_stamp(self,block_2_sign_path):
+    def analyze_block2_signature_and_stamp(self, block_2_sign_path):
         logger.info(f'Analyzing block 2 signature and stamp...')
         logger.info(f'{block_2_sign_path}')
         payload = build_signature_checking_payload(image_path=block_2_sign_path)
         response = request_completion(payload)
 
         self.signature_and_stamp_block_2 = self.safe_process_response(response, 'signature_and_stamp_2')
+        self.results['signature_and_stamp_block_2'] = self.signature_and_stamp_block_2
 
     def analyze_block4_signature_and_stamp(self,block_4_sign_path):
         logger.info(f'Analyzing block 4 signature and stamp...')
@@ -475,10 +485,4 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         payload = build_signature_checking_payload(image_path=block_4_sign_path)
         response = request_completion(payload)
         self.signature_and_stamp_block_4 = self.safe_process_response(response, 'signature_and_stamp_4')
-
-    def analyze(self):
-        super().analyze()
-        self.results['overall_quality'] = self.overall_quality
-
-        self.results['signature_and_stamp_block_2'] = self.signature_and_stamp_block_2
         self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_block_4
