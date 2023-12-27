@@ -14,8 +14,7 @@ from ai_documents.validation.entities import ResultValidator
 @click.option('--from_concessionaire', default=None, help='From concessionaire.')
 @click.option('--to_concessionaire', default=None, help='To concessionaire.')
 @click.option('--input_file_path', help='Path to the input file.')
-
-def main(valet_name, from_concessionaire, to_concessionaire, input_file_path,plate_number):
+def main(valet_name, plate_number, from_concessionaire, to_concessionaire, input_file_path):
 
     path = Path(input_file_path)
     file_name = path.name

@@ -466,7 +466,7 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
     def assess_overall_quality(self):
         payload = build_overall_quality_checking_payload(image_path=self.path_to_document)
         response = request_completion(payload)
-
+        logger.info(f'Overall quality response: {response}')
         self.overall_quality = self.safe_process_response(response, 'overall_quality')
         self.results['overall_quality'] = self.overall_quality
 
