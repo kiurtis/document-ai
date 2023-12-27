@@ -3,3 +3,7 @@ notebooks/*ipynb
 data/old/*
 .idea
 .env
+notebooks/*.png
+data/performances_data/*
+!data/performances_data/invalid_data/invalid_data_ground_truth.csv
+!data/performances_data/valid_data/valid_data_ground_truth.csv
