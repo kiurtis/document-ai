@@ -200,32 +200,32 @@ if __name__ == '__main__':
                                                        plate_number=info['plate_number'])
                     result_validator.validate()
 
-                    full_result_analysis = pd.concat([full_result_analysis,
-                                                      pd.DataFrame({
-                                                          'document_name': [name],
-                                                          'true_status': [info['validated']],
-                                                          'predicted_status': [result_validator.validated],
-                                                          'true_cause': [info['cause']],
-                                                          'predicted_cause': [", ".join(result_validator.refused_causes)],
-                                                          'details': [document_analyzer.results],
-                                                          'error': [None]
-                                                      }, index=[0])
-                                                      ])
-                except Exception as e:
-                    pd.concat([full_result_analysis,
-                               pd.DataFrame({
-                                   'document_name': [name],
-                                   'true_status': [info['validated']],
-                                   'predicted_status': [None],
-                                   'true_cause': [info['cause']],
-                                   'predicted_cause': [None],
-                                   'details': [None],
-                                   'error': [e]
-                               }, index=[0])
-                               ])
-                    logger.error(f"Error {e} while analyzing {name}")
-            saving_path = f'results/full_result_analysis_{status}_{dt}.csv'
-            full_result_analysis.to_csv(saving_path, index=False)
+                full_result_analysis = pd.concat([full_result_analysis,
+                                                  pd.DataFrame({
+                                                      'document_name': [name],
+                                                      'true_status': [info['validated']],
+                                                      'predicted_status': [result_validator.validated],
+                                                      'true_cause': [info['cause']],
+                                                      'predicted_cause': [", ".join(result_validator.refused_causes)],
+                                                      'details': [document_analyzer.results],
+                                                      'error': [None]
+                                                  }, index=[0])
+                                                  ])
+            except Exception as e:
+                pd.concat([full_result_analysis,
+                           pd.DataFrame({
+                               'document_name': [name],
+                               'true_status': [info['validated']],
+                               'predicted_status': [None],
+                               'true_cause': [info['cause']],
+                               'predicted_cause': [None],
+                               'details': [None],
+                               'error': [e]
+                           }, index=[0])
+                           ])
+                logger.error(f"Error {e} while analyzing {name}")
+        saving_path = f'results/full_result_analysis_{dt}.csv'
+        full_result_analysis.to_csv(saving_path, index=False)
 
     if RUN_METRICS_COMPUTATION:
 
