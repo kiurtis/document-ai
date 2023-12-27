@@ -1,4 +1,4 @@
-VALET_NAME?=John Doe
+VALET_NAME?="John Doe"
 PLATE_NUMBER?=12-AB-34
 FROM_CONCESSIONAIRE?=default_from_concessionaire
 TO_CONCESSIONAIRE?=default_to_concessionaire
