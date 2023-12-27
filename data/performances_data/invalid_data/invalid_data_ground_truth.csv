@@ -128,7 +128,7 @@ block2_is_not_filled,
 stamps_are_not_ok,
 signatures_are_not_ok, 
 mileage_is_not_ok,
-restition_date_is_not_filled,
+restitution_date_is_not_filled,
 telephone_is_not_filled,
 email_is_not_filled"
 FG-926-HK_PV_de_restitution_final_ARVAL_de_FG-926-HK__p1.jpeg,block4_is_not_filled_by_company
@@ -185,4 +185,4 @@ FM-444-ZE_pv_arval_p1.jpeg,"block4_is_not_filled,
 block2_is_not_filled,
 telephone_is_not_filled,
 email_is_not_filled,
-restition_date_is_not_filled"
+restitution_date_is_not_filled"
