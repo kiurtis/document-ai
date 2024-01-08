@@ -68,7 +68,7 @@ def build_block4_checking_payload(image_path):
     dict_instruction = """
     What is the "Nom et prénom" value? What is the "E-mail" value? What is the "Tél" value? Is "Société" value "Pop Valet"?
     Give the answer as a dictionary with the keys "Nom et prénom", "E-mail", "Tél", "Société" and the corresponding values. 
-    If you are note comfortable with giving the value for "Nom et prénom", "E-mail" or "Tél", just use "<FILLED>" instead.  
+    If you are not comfortable with giving the value for "Nom et prénom", "E-mail" or "Tél", just use "<FILLED>" instead.  
     If you dont find a key on the image, set the value to "<NOT_FOUND>".
     Dont write anything else.
     If you find the key but no value is associated, set the value to "<EMPTY>". No other value is accepted.

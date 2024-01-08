@@ -1,7 +1,9 @@
 import os
+import json
+import sys
+
 import click
 from pathlib import Path
-import json
 from loguru import logger
 from ai_documents.analysis.entities import ArvalClassicGPTDocumentAnalyzer
 from ai_documents.validation.entities import ResultValidator
@@ -18,22 +20,11 @@ def main(valet_name, plate_number, from_concessionaire, to_concessionaire, input
 
     path = Path(input_file_path)
     file_name = path.name
-    plate_number = file_name.split('_')[0]
-
-    # Random hyperparameters (TODO: Remove or modify as needed)
-    hyperparameters = {
-        'det_arch': "db_resnet50",
-        'reco_arch': "crnn_mobilenet_v3_large",
-        'pretrained': True,
-        'distance_margin': 5,  # find_next_right_word for words_similarity
-        'max_distance':  400,  # find_next_right_word
-        'minimum_overlap': 10  # find_next_right_word for _has_overlap
-    }
 
     try:
 
         document_analyzer = ArvalClassicGPTDocumentAnalyzer(file_name, input_file_path,
-                                                            hyperparameters
+                                                            #hyperparameters=None
                                                             )
 
         document_analyzer.analyze()
@@ -48,8 +39,8 @@ def main(valet_name, plate_number, from_concessionaire, to_concessionaire, input
         dict_to_save['refused_causes'] = result_validator.refused_causes
         dict_to_save['Validated'] = result_validator.validated
         # Save results as JSON
-        output_directory = Path(input_file_path).parent
-        json_output_path = output_directory / f"{file_name}_json.json"
+        output_directory = Path("results")
+        json_output_path = output_directory / f"{file_name}_results.json"
 
         logger.info('*************** FINAL RESULTS ***************')
         logger.info(f"Refused causes: {result_validator.refused_causes}")
