@@ -131,8 +131,8 @@ if __name__ == '__main__':
     RUN_METRICS_COMPUTATION = True
     WITH_GPT = True
     PARTIAL_ANALYSIS = False # If true, you need to comment out irrelevant validation part in the ResultValidator class
-    STATUS_TO_RUN = ['valid',
-                     #'invalid'
+    STATUS_TO_RUN = [#'valid',
+                     'invalid'
                      ]
     dt = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -150,10 +150,13 @@ if __name__ == '__main__':
             image_files = os.listdir(image_directory)
             ground_truth_data = load_ground_truth_data(status)
             # Iterate over each image and perform the operations
+            print(image_files)
             for file_name in image_files:
+                print(file_name)
                 try:
 
                     all_documents, file_path = preprocess_file_name_to_extract_infos(file_name, all_documents)
+
 
                 except Exception as e:
                     print(e)
@@ -200,7 +203,7 @@ if __name__ == '__main__':
                                                        plate_number=info['plate_number'])
                     result_validator.validate()
 
-                full_result_analysis = pd.concat([full_result_analysis,
+                    full_result_analysis = pd.concat([full_result_analysis,
                                                   pd.DataFrame({
                                                       'document_name': [name],
                                                       'true_status': [info['validated']],
@@ -211,8 +214,8 @@ if __name__ == '__main__':
                                                       'error': [None]
                                                   }, index=[0])
                                                   ])
-            except Exception as e:
-                pd.concat([full_result_analysis,
+                except Exception as e:
+                    pd.concat([full_result_analysis,
                            pd.DataFrame({
                                'document_name': [name],
                                'true_status': [info['validated']],
@@ -223,7 +226,7 @@ if __name__ == '__main__':
                                'error': [e]
                            }, index=[0])
                            ])
-                logger.error(f"Error {e} while analyzing {name}")
+                    logger.error(f"Error {e} while analyzing {name}")
         saving_path = f'results/full_result_analysis_{dt}.csv'
         full_result_analysis.to_csv(saving_path, index=False)
 
