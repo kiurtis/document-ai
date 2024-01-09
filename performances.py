@@ -110,9 +110,16 @@ def preprocess_file_name_to_extract_infos(file_name, all_documents):
                 lambda x: x in normalize_str(file_name))
             same_plate_number = invalid_restitutions_infos['plateNumber'].apply(
                 lambda x: x in file_name)
-            all_documents[file_name]['cause'] = \
-                invalid_restitutions_infos.loc[same_filename & same_plate_number,
-                'adminComment'].values[0]
+
+            #all_documents[file_name]['cause'] = \
+            #    invalid_restitutions_infos.loc[same_filename & same_plate_number,
+            #    'adminComment'].values[0]
+            #Quick fix, to be investigated
+            matching_rows = invalid_restitutions_infos.loc[same_filename & same_plate_number, 'adminComment']
+            if not matching_rows.empty:
+                all_documents[file_name]['cause'] = matching_rows.values[0]
+            else:
+                all_documents[file_name]['cause'] = "No matching cause found"
 
         all_documents[file_name]['plate_number'] = file_name.split('_')[0]
     else:

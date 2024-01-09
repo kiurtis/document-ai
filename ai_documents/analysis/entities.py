@@ -64,8 +64,7 @@ class ArvalClassicDocumentAnalyzer:
         missing_files = []
 
         for i in filenames:
-            cropped_image_path = os.path.join(self.tmp_folder_path,
-                                              f"{os.path.splitext(self.document_name)[0]}_{i}.jpeg")
+            cropped_image_path = os.path.join(self.tmp_folder_path, i)
 
             if os.path.exists(cropped_image_path):
                 block_doc.append(cropped_image_path)
