@@ -157,9 +157,7 @@ if __name__ == '__main__':
             image_files = os.listdir(image_directory)
             ground_truth_data = load_ground_truth_data(status)
             # Iterate over each image and perform the operations
-            print(image_files)
             for file_name in image_files:
-                print(file_name)
                 try:
 
                     all_documents, file_path = preprocess_file_name_to_extract_infos(file_name, all_documents)
@@ -179,7 +177,8 @@ if __name__ == '__main__':
 
             files_to_test = ground_truth_data['document_name'].values
 
-            files_to_exclude = []
+            files_to_exclude = ['EH-082-TV_PV_de_restitution_.jpeg',
+                                'FK-184-AJ_PV_de_restitution.png']
             files_to_iterate = {file: all_documents[file]
                                 for file in sorted(files_to_test)
                                 if file not in files_to_exclude}.items()
