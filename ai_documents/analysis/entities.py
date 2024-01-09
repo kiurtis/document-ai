@@ -281,12 +281,14 @@ class ArvalClassicDocumentAnalyzer:
     def analyze_block4(self):
         #We check if the block4 is subdvided:
         self.analyze_block4_text_and_signature_and_stamp(self.file_path_block4, verbose=False, plot_boxes=False)
-        self.results['details']['block_4_image_analyzed'] = 'file_path_block4'
+        self.results['signature_and_stamp_block_4'] = self.results['block_4']['Signature and stamp']
+        #self.results['details']['block_4_image_analyzed'] = 'file_path_block4'
 
 
     def analyze_block2(self):
         #We check if the block2 is subdvided:
         self.analyze_block2_text_and_signature_and_stamp(self.file_path_block2, verbose=False, plot_boxes=False)
+        self.results['signature_and_stamp_block_2'] = self.results['block_2']['Signature and stamp']
         #self.analyze_block2_signature_and_stamp(self.file_path_block2)
         #self.results['details']['block_2_image_analyzed'] = 'file_path_block2'
 
@@ -349,6 +351,7 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         response = request_completion(payload)
         logger.info(f'Block 4 response: {response}')
         self.result_json_block_4 = self.safe_process_response(response, 'result_json_block_4')
+
         if self.result_json_block_4 is None:
             self.result_json_block_4 = {'block_4': {'Nom et prénom': '<NOT_FOUND>',
                                                     'E-mail': '<NOT_FOUND>',
@@ -373,6 +376,7 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
         response = request_completion(payload)
         self.result_json_block_2 = self.safe_process_response(response, 'result_json_block_2')
+
         if self.result_json_block_2 is None:
             self.result_json_block_2 = {'block_2': {"Immatriculé": '<NOT_FOUND>',
                                                     "Kilométrage": '<NOT_FOUND>',

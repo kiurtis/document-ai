@@ -136,6 +136,7 @@ def build_block4_checking_payload_and_signature_stamp(image_path):
     base64_image = encode_image(image_path)
 
     dict_instruction = """
+    First do :
     What is the "Nom et prénom" value? What is the "E-mail" value? What is the "Tél" value? Is "Société" value "Pop Valet"?
     Give the answer as a dictionary with the keys "Nom et prénom", "E-mail", "Tél", "Société" and the corresponding values. 
     If you are not comfortable with giving the value for "Nom et prénom", "E-mail" or "Tél", just use "<FILLED>" instead.  
@@ -150,6 +151,7 @@ def build_block4_checking_payload_and_signature_stamp(image_path):
                                             - If only a a signature, answer only "signature".
                                             - If none are present, answer only "none
     When you have find your answer, add it in the previous dictionary with the key "Signature and stamp"
+    I just want the dictionary structure, without ``` at the beginning or the end ! 
     
     """
     content = [{"type": "text", "text": dict_instruction}]
