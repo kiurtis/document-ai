@@ -61,6 +61,48 @@ def build_block_checking_payload(keys, image_path):
     return payload
 
 
+def build_block_checking_payload_and_signature_and_stamp(keys, image_path):
+
+    # Read and encode the image in base64 format
+    base64_image = encode_image(image_path)
+
+    # Construct the content for each key
+    content = [{"type": "text", "text": f'What is the "{key}" value?'} for key in keys]
+
+    # Add instruction for dictionary format at the end
+    dict_instruction = 'Give the answer as a dictionary with the keys ' + \
+                       ', '.join([f'"{key}"' for key in keys]) + \
+                       ' and the corresponding values. Dont write anything else. If you dont find a key on the image, set the value to "<NOT_FOUND>".' \
+                       'If you find the key but no value is associated, set the value to "<EMPTY>". No other value is accepted.'
+
+    signature_and_stamp_instructions = """
+        In a second time, check if a signature and stamp are present on the right part of the document? Answer only one word, 
+                                            you have only 4 choices, "both", "stamp", "signature", "none".
+                                            - If both, answer only "both". 
+                                            - If only a stamp, answer only "stamp".
+                                            - If only a a signature, answer only "signature".
+                                            - If none are present, answer only "none
+        When you have find your answer, add it in the previous dictionary with the key "Signature and stamp"
+        """
+
+    content.append({"type": "text", "text": dict_instruction})
+    content.append({"type": "text", "text": signature_and_stamp_instructions})
+    logger.info(f"Block 2 content:\n{content}")
+
+    # Add the image part
+    content.append({
+        "type": "image_url",
+        "image_url": {
+            "url": f"data:image/jpeg;base64,{base64_image}",
+            "detail": "high"
+        }
+    })
+
+    payload = set_payload_content(content)
+
+    return payload
+
+
 def build_block4_checking_payload(image_path):
     # Read and encode the image in base64 format
     base64_image = encode_image(image_path)
@@ -88,6 +130,45 @@ def build_block4_checking_payload(image_path):
     payload = set_payload_content(content)
 
     return payload
+
+def build_block4_checking_payload_and_signature_stamp(image_path):
+    # Read and encode the image in base64 format
+    base64_image = encode_image(image_path)
+
+    dict_instruction = """
+    What is the "Nom et prénom" value? What is the "E-mail" value? What is the "Tél" value? Is "Société" value "Pop Valet"?
+    Give the answer as a dictionary with the keys "Nom et prénom", "E-mail", "Tél", "Société" and the corresponding values. 
+    If you are not comfortable with giving the value for "Nom et prénom", "E-mail" or "Tél", just use "<FILLED>" instead.  
+    If you dont find a key on the image, set the value to "<NOT_FOUND>".
+    Dont write anything else.
+    If you find the key but no value is associated, set the value to "<EMPTY>". No other value is accepted.
+    
+    In a second time, check if a signature and stamp are present on the right part of the document? Answer only one word, 
+                                            you have only 4 choices, "both", "stamp", "signature", "none".
+                                            - If both, answer only "both". 
+                                            - If only a stamp, answer only "stamp".
+                                            - If only a a signature, answer only "signature".
+                                            - If none are present, answer only "none
+    When you have find your answer, add it in the previous dictionary with the key "Signature and stamp"
+    
+    """
+    content = [{"type": "text", "text": dict_instruction}]
+    logger.info(f"Block 2 content:\n{content}")
+
+    # Add the image part
+    content.append({
+        "type": "image_url",
+        "image_url": {
+            "url": f"data:image/jpeg;base64,{base64_image}",
+            "detail": "high"
+        }
+    })
+
+    payload = set_payload_content(content)
+
+    return payload
+
+
 def number_plate_check_gpt(plate_number, image_path, with_few_shots=False):
 
     # Read and encode the image in base64 format

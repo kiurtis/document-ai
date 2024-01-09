@@ -200,7 +200,7 @@ if __name__ == '__main__':
                                                        plate_number=info['plate_number'])
                     result_validator.validate()
 
-                full_result_analysis = pd.concat([full_result_analysis,
+                    full_result_analysis = pd.concat([full_result_analysis,
                                                   pd.DataFrame({
                                                       'document_name': [name],
                                                       'true_status': [info['validated']],
@@ -211,8 +211,8 @@ if __name__ == '__main__':
                                                       'error': [None]
                                                   }, index=[0])
                                                   ])
-            except Exception as e:
-                pd.concat([full_result_analysis,
+                except Exception as e:
+                    pd.concat([full_result_analysis,
                            pd.DataFrame({
                                'document_name': [name],
                                'true_status': [info['validated']],
@@ -223,7 +223,7 @@ if __name__ == '__main__':
                                'error': [e]
                            }, index=[0])
                            ])
-                logger.error(f"Error {e} while analyzing {name}")
+                    logger.error(f"Error {e} while analyzing {name}")
         saving_path = f'results/full_result_analysis_{dt}.csv'
         full_result_analysis.to_csv(saving_path, index=False)
 
