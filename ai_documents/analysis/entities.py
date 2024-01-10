@@ -20,7 +20,7 @@ from ai_documents.analysis.cv.boxes_processing import get_processed_boxes_and_wo
 from ai_documents.analysis.cv.document_parsing import find_next_right_word
 from ai_documents.analysis.lmm.gpt import build_block_checking_payload, request_completion, \
     build_overall_quality_checking_payload, build_signature_checking_payload, number_plate_check_gpt, \
-    build_block4_checking_payload,build_block4_checking_payload_and_signature_stamp,build_block_checking_payload_and_signature_and_stamp
+    build_block4_checking_payload,build_block4_checking_payload_and_signature_stamp,build_block2_checking_payload_and_signature_stamp,build_block_checking_payload_and_signature_and_stamp
 from ai_documents.plotting import plot_boxes_with_text
 from ai_documents.exceptions import DocumentAnalysisError, LMMProcessingError, BlockDetectionError
 
@@ -288,6 +288,8 @@ class ArvalClassicDocumentAnalyzer:
     def analyze_block2(self):
         #We check if the block2 is subdvided:
         self.analyze_block2_text_and_signature_and_stamp(self.file_path_block2, verbose=False, plot_boxes=False)
+        #print(self.results['block_2'])
+        #print(self.results['block_2']['Signature and stamp'])
         self.results['signature_and_stamp_block_2'] = self.results['block_2']['Signature and stamp']
         #self.analyze_block2_signature_and_stamp(self.file_path_block2)
         #self.results['details']['block_2_image_analyzed'] = 'file_path_block2'
@@ -351,6 +353,7 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         response = request_completion(payload)
         logger.info(f'Block 4 response: {response}')
         self.result_json_block_4 = self.safe_process_response(response, 'result_json_block_4')
+        #print(self.result_json_block_4)
 
         if self.result_json_block_4 is None:
             self.result_json_block_4 = {'block_4': {'Nom et prénom': '<NOT_FOUND>',
@@ -370,12 +373,14 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
             plt.figure(figsize=(15, 15))
             plt.imshow(image)
 
-        payload = build_block_checking_payload_and_signature_and_stamp(keys=self.template['block_2'],
-                                               image_path=block2_text_image_path)
+        payload = build_block2_checking_payload_and_signature_stamp(image_path=block2_text_image_path)
 
 
         response = request_completion(payload)
+        logger.info(f'Block 2 response: {response}')
         self.result_json_block_2 = self.safe_process_response(response, 'result_json_block_2')
+        #print(self.result_json_block_2)
+
 
         if self.result_json_block_2 is None:
             self.result_json_block_2 = {'block_2': {"Immatriculé": '<NOT_FOUND>',
@@ -385,17 +390,18 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
 
         #Litle gpt hack for number_plate
-        plate_number = self.document_name.split('_')[0]
-        response2 = request_completion(number_plate_check_gpt(plate_number, block2_text_image_path))
+        #plate_number = self.document_name.split('_')[0]
+        #response2 = request_completion(number_plate_check_gpt(plate_number, block2_text_image_path))
 
-        plate_number_GPT = response2["choices"][0]['message']['content']
+        #plate_number_GPT = response2["choices"][0]['message']['content']
 
-        logger.info(f'Old plate number : {self.result_json_block_2["Immatriculé"]}')
-        self.result_json_block_2["Immatriculé"] = plate_number_GPT
-        logger.info(f'GPT plate number : {plate_number_GPT}')
-        logger.info(f'{self.result_json_block_2["Immatriculé"]}')
+        #logger.info(f'Old plate number : {self.result_json_block_2["Immatriculé"]}')
+        #self.result_json_block_2["Immatriculé"] = plate_number_GPT
+        #logger.info(f'GPT plate number : {plate_number_GPT}')
+        #logger.info(f'{self.result_json_block_2["Immatriculé"]}')
 
         self.results['block_2'] = self.result_json_block_2
+
 
     def assess_overall_quality(self):
         payload = build_overall_quality_checking_payload(image_path=self.path_to_document)
