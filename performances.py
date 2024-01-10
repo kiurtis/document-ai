@@ -131,7 +131,7 @@ if __name__ == '__main__':
     RUN_METRICS_COMPUTATION = True
     WITH_GPT = True
     PARTIAL_ANALYSIS = False # If true, you need to comment out irrelevant validation part in the ResultValidator class
-    STATUS_TO_RUN = ['valid',
+    STATUS_TO_RUN = ['invalid',
                      #'invalid'
                      ]
     dt = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -169,7 +169,7 @@ if __name__ == '__main__':
 
             files_to_test = ground_truth_data['document_name'].values
 
-            files_to_exclude = []
+            files_to_exclude = ['EH-082-TV_PV_de_restitution_.jpeg','FK-184-AJ_PV_de_restitution.png']
             files_to_iterate = {file: all_documents[file]
                                 for file in sorted(files_to_test)
                                 if file not in files_to_exclude}.items()
