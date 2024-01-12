@@ -168,12 +168,15 @@ if __name__ == '__main__':
                          'true_cause', 'predicted_cause'])
 
             files_to_test = ground_truth_data['document_name'].values
-
+            files_to_test =['FC-080-PV_PV_de_reprise_p1.jpeg']
             files_to_exclude = ['EH-082-TV_PV_de_restitution_.jpeg','FK-184-AJ_PV_de_restitution.png']
+
             files_to_iterate = {file: all_documents[file]
                                 for file in sorted(files_to_test)
                                 if file not in files_to_exclude}.items()
-
+            i = 0
+            print('file to iterate full list', files_to_iterate)
+            print('lenght   =',len(files_to_iterate))
             for name, info in tqdm(files_to_iterate):
                 logger.info(f"Analyzing {name}")
                 try:
@@ -211,6 +214,7 @@ if __name__ == '__main__':
                                                       'error': [None]
                                                   }, index=[0])
                                                   ])
+                    i += 1
                 except Exception as e:
                     pd.concat([full_result_analysis,
                            pd.DataFrame({
@@ -226,6 +230,9 @@ if __name__ == '__main__':
                     logger.error(f"Error {e} while analyzing {name}")
         saving_path = f'results/full_result_analysis_{dt}.csv'
         full_result_analysis.to_csv(saving_path, index=False)
+
+
+    print('Number of file analyse  =',i)
 
     if RUN_METRICS_COMPUTATION:
 
