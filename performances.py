@@ -110,16 +110,9 @@ def preprocess_file_name_to_extract_infos(file_name, all_documents):
                 lambda x: x in normalize_str(file_name))
             same_plate_number = invalid_restitutions_infos['plateNumber'].apply(
                 lambda x: x in file_name)
-
-            #all_documents[file_name]['cause'] = \
-            #    invalid_restitutions_infos.loc[same_filename & same_plate_number,
-            #    'adminComment'].values[0]
-            #Quick fix, to be investigated
-            matching_rows = invalid_restitutions_infos.loc[same_filename & same_plate_number, 'adminComment']
-            if not matching_rows.empty:
-                all_documents[file_name]['cause'] = matching_rows.values[0]
-            else:
-                all_documents[file_name]['cause'] = "No matching cause found"
+            all_documents[file_name]['cause'] = \
+                invalid_restitutions_infos.loc[same_filename & same_plate_number,
+                'adminComment'].values[0]
 
         all_documents[file_name]['plate_number'] = file_name.split('_')[0]
     else:
@@ -138,8 +131,8 @@ if __name__ == '__main__':
     RUN_METRICS_COMPUTATION = True
     WITH_GPT = True
     PARTIAL_ANALYSIS = False # If true, you need to comment out irrelevant validation part in the ResultValidator class
-    STATUS_TO_RUN = [#'valid',
-                     'invalid'
+    STATUS_TO_RUN = ['invalid',
+                     #'invalid'
                      ]
     dt = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -162,7 +155,6 @@ if __name__ == '__main__':
 
                     all_documents, file_path = preprocess_file_name_to_extract_infos(file_name, all_documents)
 
-
                 except Exception as e:
                     print(e)
                     print(file_name)
@@ -177,12 +169,13 @@ if __name__ == '__main__':
 
             files_to_test = ground_truth_data['document_name'].values
 
-            files_to_exclude = ['EH-082-TV_PV_de_restitution_.jpeg',
-                                'FK-184-AJ_PV_de_restitution.png']
+            files_to_exclude = ['EH-082-TV_PV_de_restitution_.jpeg','FK-184-AJ_PV_de_restitution.png']
             files_to_iterate = {file: all_documents[file]
                                 for file in sorted(files_to_test)
                                 if file not in files_to_exclude}.items()
-
+            i = 0
+            print('file to iterate full list', files_to_iterate)
+            print('lenght   =',len(files_to_iterate))
             for name, info in tqdm(files_to_iterate):
                 logger.info(f"Analyzing {name}")
                 try:
@@ -220,6 +213,7 @@ if __name__ == '__main__':
                                                       'error': [None]
                                                   }, index=[0])
                                                   ])
+                    i += 1
                 except Exception as e:
                     pd.concat([full_result_analysis,
                            pd.DataFrame({
@@ -235,6 +229,9 @@ if __name__ == '__main__':
                     logger.error(f"Error {e} while analyzing {name}")
         saving_path = f'results/full_result_analysis_{dt}.csv'
         full_result_analysis.to_csv(saving_path, index=False)
+
+
+    print('Number of file analyse  =',i)
 
     if RUN_METRICS_COMPUTATION:
 
