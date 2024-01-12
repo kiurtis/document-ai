@@ -152,12 +152,12 @@ def build_block2_checking_payload_and_signature_stamp(image_path):
     - If none are present, answer only "noneWhen you have find your answer, add it in the previous dictionary with the key "Signature and stamp".
     I just want the dictionary structure, without ``` at the beginning or the end ! 
 
-    To help you I gave you to exemples, for the first image you should return: {'Immatriculé': ‘<EMPTY>','Kilométrage': '46072','Restitué le': '21/09/23','N° de série': 'VF1IL00055729079',’Signature and stamp': 'signature'}
+    To help you I gave you to exemples, for the first image you should return: {"Immatriculé": ‘<EMPTY>',"Kilométrage": '46072',"Restitué le": '21/09/23',"N° de série": 'VF1IL00055729079',"Signature and stamp": 'signature'}
 
-    For the second you should return : {'Immatriculé': ‘EK-112-NP','Kilométrage': '198206','Restitué le': '<EMPTY>','N° de série': 'VF15RBFOA57206076',’Signature and stamp': 'stamp'}
+    For the second you should return : {"Immatriculé": ‘EK-112-NP',"Kilométrage": '198206',"Restitué le": '<EMPTY>',
+    "N° de série": 'VF15RBFOA57206076',"Signature and stamp": 'stamp'}
 
     Can you perform the same for the third image ?
-    Don't put any '\n' in your response and don't put the final dictionary inside a pair of ".
     """
     content = [{"type": "text", "text": dict_instruction}]
     logger.info(f"Block 2 content:\n{content}")
@@ -221,9 +221,9 @@ def build_block4_checking_payload_and_signature_stamp(image_path):
     - If none are present, answer only "noneWhen you have find your answer, add it in the previous dictionary with the key "Signature and stamp".
     I just want the dictionary structure, without ``` at the beginning or the end ! 
 
-    To help you I gave you to exemples, for the first image you should return: {'Nom et prénom': ‘Hemond Sonia','E-mail': '<EMPTY>','Tél': '06 13 34 05 33','Société': 'Merieux',’Signature and stamp': 'signature'}
+    To help you I gave you to exemples, for the first image you should return: {"Nom et prénom": ‘Hemond Sonia',"E-mail": '<EMPTY>',"Tél": '06 13 34 05 33',"Société": 'Merieux',"Signature and stamp": 'signature'}
 
-    For the second you should return : {'Nom et prénom': ‘Freixo Emmanuel','E-mail': '<EMPTY>','Tél': '0666443658','Société': '<EMPTY>',’Signature and stamp': 'both'}
+    For the second you should return : {"Nom et prénom": ‘Freixo Emmanuel',"E-mail": '<EMPTY>',"Tél": '0666443658',"Société": '<EMPTY>',"Signature and stamp": 'both'}
 
     Can you perform the same for the third image ?
     Don't put any '\n' in your response.

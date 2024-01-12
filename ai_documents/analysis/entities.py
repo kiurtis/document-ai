@@ -379,8 +379,6 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         response = request_completion(payload)
         logger.info(f'Block 2 response: {response}')
         self.result_json_block_2 = self.safe_process_response(response, 'result_json_block_2')
-        #print(self.result_json_block_2)
-
 
         if self.result_json_block_2 is None:
             self.result_json_block_2 = {'block_2': {"Immatriculé": '<NOT_FOUND>',
@@ -388,17 +386,16 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
                                                     "Restitué le": '<NOT_FOUND>',
                                                     "Numéro de série": '<NOT_FOUND>'}}
 
-
         #Litle gpt hack for number_plate
-        #plate_number = self.document_name.split('_')[0]
-        #response2 = request_completion(number_plate_check_gpt(plate_number, block2_text_image_path))
+        plate_number = self.document_name.split('_')[0]
+        response2 = request_completion(number_plate_check_gpt(plate_number, block2_text_image_path))
 
-        #plate_number_GPT = response2["choices"][0]['message']['content']
+        plate_number_GPT = response2["choices"][0]['message']['content']
 
-        #logger.info(f'Old plate number : {self.result_json_block_2["Immatriculé"]}')
-        #self.result_json_block_2["Immatriculé"] = plate_number_GPT
-        #logger.info(f'GPT plate number : {plate_number_GPT}')
-        #logger.info(f'{self.result_json_block_2["Immatriculé"]}')
+        logger.info(f'Old plate number : {self.result_json_block_2["Immatriculé"]}')
+        self.result_json_block_2["Immatriculé"] = plate_number_GPT
+        logger.info(f'GPT plate number : {plate_number_GPT}')
+        logger.info(f'{self.result_json_block_2["Immatriculé"]}')
 
         self.results['block_2'] = self.result_json_block_2
 
