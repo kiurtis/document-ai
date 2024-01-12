@@ -152,12 +152,7 @@ def build_block2_checking_payload_and_signature_stamp(image_path):
     - If none are present, answer only "noneWhen you have find your answer, add it in the previous dictionary with the key "Signature and stamp".
     I just want the dictionary structure, without ``` at the beginning or the end ! 
 
-    To help you I gave you to exemples, for the first image you should return: {"Immatriculé": ‘<EMPTY>',"Kilométrage": '46072',"Restitué le": '21/09/23',"N° de série": 'VF1IL00055729079',"Signature and stamp": 'signature'}
-
-    For the second you should return : {"Immatriculé": ‘EK-112-NP',"Kilométrage": '198206',"Restitué le": '<EMPTY>',
-    "N° de série": 'VF15RBFOA57206076',"Signature and stamp": 'stamp'}
-
-    Can you perform the same for the third image ?
+    To help you I gave you two exemples, for the first image below you should return: {"Immatriculé": ‘<EMPTY>',"Kilométrage": '46072',"Restitué le": '21/09/23',"N° de série": 'VF1IL00055729079',"Signature and stamp": 'signature'}
     """
     content = [{"type": "text", "text": dict_instruction}]
     logger.info(f"Block 2 content:\n{content}")
@@ -173,6 +168,13 @@ def build_block2_checking_payload_and_signature_stamp(image_path):
         }
     })
 
+    dict_instruction2 = """
+    For the second image you should return : {"Immatriculé": ‘EK-112-NP',"Kilométrage": '198206',"Restitué le": '<EMPTY>',
+    "N° de série": 'VF15RBFOA57206076',"Signature and stamp": 'stamp'}
+    """
+    content.append({"type": "text", "text": dict_instruction2})
+
+
     few_shot_block2_2_path = 'data/few_shots_no_sub/block2/Block2_2.jpeg'
     base64_image_few_shot_block2_2 = encode_image(few_shot_block2_2_path)
 
@@ -184,6 +186,10 @@ def build_block2_checking_payload_and_signature_stamp(image_path):
         }
     })
 
+    dict_instruction3 = """
+    Can you perform the same for the third image ?
+    """
+    content.append({"type": "text", "text": dict_instruction3})
 
     base64_image = encode_image(image_path)
 
@@ -221,15 +227,10 @@ def build_block4_checking_payload_and_signature_stamp(image_path):
     - If none are present, answer only "noneWhen you have find your answer, add it in the previous dictionary with the key "Signature and stamp".
     I just want the dictionary structure, without ``` at the beginning or the end ! 
 
-    To help you I gave you to exemples, for the first image you should return: {"Nom et prénom": ‘Hemond Sonia',"E-mail": '<EMPTY>',"Tél": '06 13 34 05 33',"Société": 'Merieux',"Signature and stamp": 'signature'}
-
-    For the second you should return : {"Nom et prénom": ‘Freixo Emmanuel',"E-mail": '<EMPTY>',"Tél": '0666443658',"Société": '<EMPTY>',"Signature and stamp": 'both'}
-
-    Can you perform the same for the third image ?
-    Don't put any '\n' in your response.
+    To help you I gave you two exemples, for the first image below you should return: {"Nom et prénom": ‘Hemond Sonia',"E-mail": '<EMPTY>',"Tél": '06 13 34 05 33',"Société": 'Merieux',"Signature and stamp": 'signature'}
     """
     content = [{"type": "text", "text": dict_instruction}]
-    logger.info(f"Block 4 content:\n{content}")
+    #logger.info(f"Block 4 content:\n{content}")
 
     few_shot_block4_1_path = 'data/few_shots_no_sub/block4/Block4_1.jpeg'
     base64_image_few_shot_block4_1 = encode_image(few_shot_block4_1_path)
@@ -242,6 +243,11 @@ def build_block4_checking_payload_and_signature_stamp(image_path):
         }
     })
 
+    dict_instruction2 = """
+    For the second image you should return : {"Nom et prénom": ‘Freixo Emmanuel',"E-mail": '<EMPTY>',"Tél": '0666443658',"Société": '<EMPTY>',"Signature and stamp": 'both'}
+    """
+    content.append({"type": "text", "text": dict_instruction2})
+
     few_shot_block4_2_path = 'data/few_shots_no_sub/block4/Block4_2.jpeg'
     base64_image_few_shot_block4_2 = encode_image(few_shot_block4_2_path)
 
@@ -253,7 +259,11 @@ def build_block4_checking_payload_and_signature_stamp(image_path):
         }
     })
 
-
+    dict_instruction3 = """
+    Can you perform the same for the third image ?
+    Don't put any '\n' in your response.
+    """
+    content.append({"type": "text", "text": dict_instruction3})
     base64_image = encode_image(image_path)
 
     # Add the image part
