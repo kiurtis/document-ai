@@ -187,9 +187,45 @@ def build_block2_checking_payload_and_signature_stamp(image_path):
     })
 
     dict_instruction3 = """
-    Can you perform the same for the third image ?
+    For the third image you should return : {"Immatriculé": ‘EL-935-PX',"Kilométrage": '101370',"Restitué le": '24/03/23',
+    "N° de série": 'VF77ABHW6HN506269',"Signature and stamp": 'none'}
     """
     content.append({"type": "text", "text": dict_instruction3})
+
+
+    few_shot_block2_3_path = 'data/few_shots_no_sub/block2/Block2_3.jpeg'
+    base64_image_few_shot_block2_3 = encode_image(few_shot_block2_3_path)
+
+    content.append({
+        "type": "image_url",
+        "image_url": {
+            "url": f"data:image/jpeg;base64,{base64_image_few_shot_block2_3}",
+            "detail": "high"
+        }
+    })
+
+    dict_instruction4 = """
+    For the third image you should return : {"Immatriculé": ‘EK-531-NX',"Kilométrage": '65232',"Restitué le": '<EMPTY>',
+    "N° de série": '<EMPTY>',"Signature and stamp": 'both'}
+    """
+    content.append({"type": "text", "text": dict_instruction4})
+
+
+    few_shot_block2_4_path = 'data/few_shots_no_sub/block2/Block2_4.jpeg'
+    base64_image_few_shot_block2_4 = encode_image(few_shot_block2_4_path)
+
+    content.append({
+        "type": "image_url",
+        "image_url": {
+            "url": f"data:image/jpeg;base64,{base64_image_few_shot_block2_4}",
+            "detail": "high"
+        }
+    })
+
+    dict_instruction5 = """
+    Can you perform the same for the next image ?
+    """
+    content.append({"type": "text", "text": dict_instruction5})
 
     base64_image = encode_image(image_path)
 
@@ -260,10 +296,42 @@ def build_block4_checking_payload_and_signature_stamp(image_path):
     })
 
     dict_instruction3 = """
-    Can you perform the same for the third image ?
-    Don't put any '\n' in your response.
+    For the third image you should return : {"Nom et prénom": ‘Svoie',"E-mail": 'Pascal.judie@groupeedf.com',"Tél": '<EMPTY>',"Société": 'ADF',"Signature and stamp": 'signature'}
     """
     content.append({"type": "text", "text": dict_instruction3})
+
+    few_shot_block4_3_path = 'data/few_shots_no_sub/block4/Block4_3.jpeg'
+    base64_image_few_shot_block4_3 = encode_image(few_shot_block4_3_path)
+
+    content.append({
+        "type": "image_url",
+        "image_url": {
+            "url": f"data:image/jpeg;base64,{base64_image_few_shot_block4_3}",
+            "detail": "high"
+        }
+    })
+
+    dict_instruction4 = """
+    For the fourth image you should return : {"Nom et prénom": ‘Elodie Marion',"E-mail": '<EMPTY>',"Tél": '<EMPTY>',"Société": 'Eurallige',"Signature and stamp": 'none'}
+    """
+    content.append({"type": "text", "text": dict_instruction4})
+
+    few_shot_block4_4_path = 'data/few_shots_no_sub/block4/Block4_4.jpeg'
+    base64_image_few_shot_block4_4 = encode_image(few_shot_block4_4_path)
+
+    content.append({
+        "type": "image_url",
+        "image_url": {
+            "url": f"data:image/jpeg;base64,{base64_image_few_shot_block4_4}",
+            "detail": "high"
+        }
+    })
+
+    dict_instruction5 = """
+    Can you perform the same for the next image ?
+    Don't put any '\n' in your response.
+    """
+    content.append({"type": "text", "text": dict_instruction5})
     base64_image = encode_image(image_path)
 
     # Add the image part
