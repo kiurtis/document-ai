@@ -105,6 +105,7 @@ def preprocess_file_name_to_extract_infos(file_name, all_documents):
 
         if status == "valid":
             all_documents[file_name]['cause'] = "-"
+
         else:
             same_filename = invalid_restitutions_infos['formatted_filename'].apply(
                 lambda x: x in normalize_str(file_name))
@@ -123,6 +124,7 @@ def load_ground_truth_data(status):
     # Load ground truth and predictions
     ground_truth_path = f'data/performances_data/{status}_data/{status}_data_ground_truth.csv'  # Replace with your actual path
     ground_truth_data = pd.read_csv(ground_truth_path)
+    print(ground_truth_path)
     return ground_truth_data
 
 if __name__ == '__main__':
@@ -131,8 +133,8 @@ if __name__ == '__main__':
     RUN_METRICS_COMPUTATION = True
     WITH_GPT = True
     PARTIAL_ANALYSIS = False # If true, you need to comment out irrelevant validation part in the ResultValidator class
-    STATUS_TO_RUN = ['valid'#,
-                     #'invalid'
+    STATUS_TO_RUN = ['valid',
+                     'invalid'
                      ]
     dt = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -145,6 +147,7 @@ if __name__ == '__main__':
         # Getting all the documents path and name
 
         all_documents = {}
+        i = 0
         for status in STATUS_TO_RUN:
             image_directory = Path(f'data/performances_data/{status}_data/arval_classic_restitution_images/')
             image_files = os.listdir(image_directory)
@@ -173,7 +176,7 @@ if __name__ == '__main__':
             files_to_iterate = {file: all_documents[file]
                                 for file in sorted(files_to_test)
                                 if file not in files_to_exclude}.items()
-            i = 0
+
             print('file to iterate full list', files_to_iterate)
             print('lenght   =',len(files_to_iterate))
             for name, info in tqdm(files_to_iterate):
@@ -227,8 +230,8 @@ if __name__ == '__main__':
                            }, index=[0])
                            ])
                     logger.error(f"Error {e} while analyzing {name}")
-        saving_path = f'results/full_result_analysis_{status}.csv'
-        full_result_analysis.to_csv(saving_path, index=False)
+            saving_path = f'results/full_result_analysis_{status}.csv'
+            full_result_analysis.to_csv(saving_path, index=False)
 
 
     print('Number of file analyse  =',i)
