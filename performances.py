@@ -131,7 +131,7 @@ if __name__ == '__main__':
     RUN_METRICS_COMPUTATION = True
     WITH_GPT = True
     PARTIAL_ANALYSIS = False # If true, you need to comment out irrelevant validation part in the ResultValidator class
-    STATUS_TO_RUN = ['invalid',
+    STATUS_TO_RUN = ['valid'#,
                      #'invalid'
                      ]
     dt = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -227,7 +227,7 @@ if __name__ == '__main__':
                            }, index=[0])
                            ])
                     logger.error(f"Error {e} while analyzing {name}")
-        saving_path = f'results/full_result_analysis_{dt}.csv'
+        saving_path = f'results/full_result_analysis_{status}.csv'
         full_result_analysis.to_csv(saving_path, index=False)
 
 
