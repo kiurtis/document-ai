@@ -130,11 +130,11 @@ def load_ground_truth_data(status):
 if __name__ == '__main__':
 
     RUN_ANALYSIS = True
-    RUN_METRICS_COMPUTATION = True
+    RUN_METRICS_COMPUTATION = False
     WITH_GPT = True
     PARTIAL_ANALYSIS = False # If true, you need to comment out irrelevant validation part in the ResultValidator class
-    STATUS_TO_RUN = ['valid',
-                     'invalid'
+    STATUS_TO_RUN = ['invalid'#,
+                     #'invalid'
                      ]
     dt = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -181,55 +181,64 @@ if __name__ == '__main__':
             print('lenght   =',len(files_to_iterate))
             for name, info in tqdm(files_to_iterate):
                 logger.info(f"Analyzing {name}")
-                try:
-                    document_analyzer = ArvalClassicGPTDocumentAnalyzer(name, info['path'],
-                                                                        #hyperparameters
-                                                                        )
-                    #document_analyzer.analyze()
-                    if PARTIAL_ANALYSIS:
-                        document_analyzer.assess_overall_quality()
-                        document_analyzer.get_or_create_blocks()
-                        document_analyzer.get_result_template()
-                        try:
-                            document_analyzer.analyze_block4_text(document_analyzer.block_4_info_path, # Change according to the analysis you want to perform
-                                                                  verbose=False, plot_boxes=False)
-                        except Exception as e:
-                            document_analyzer.analyze_block4_text(document_analyzer.file_path_block4,
-                                                                  verbose=False, plot_boxes=False)
-                    else:
-                        document_analyzer.analyze()
-                    # document_analyzer.plot_blocks()
-                    logger.info(f"Result: {document_analyzer.results}")
+                max_attempts = 3
+                attempt = 0
+                while attempt < max_attempts:
+                    try:
+                        document_analyzer = ArvalClassicGPTDocumentAnalyzer(name, info['path'],
+                                                                            #hyperparameters
+                                                                            )
+                        #document_analyzer.analyze()
+                        if PARTIAL_ANALYSIS:
+                            document_analyzer.assess_overall_quality()
+                            document_analyzer.get_or_create_blocks()
+                            document_analyzer.get_result_template()
+                            try:
+                                document_analyzer.analyze_block4_text(document_analyzer.block_4_info_path, # Change according to the analysis you want to perform
+                                                                      verbose=False, plot_boxes=False)
+                            except Exception as e:
+                                document_analyzer.analyze_block4_text(document_analyzer.file_path_block4,
+                                                                      verbose=False, plot_boxes=False)
+                        else:
+                            document_analyzer.analyze()
+                        # document_analyzer.plot_blocks()
+                        logger.info(f"Result: {document_analyzer.results}")
 
-                    result_validator = ResultValidator(document_analyzer.results,
-                                                       plate_number=info['plate_number'])
-                    result_validator.validate()
+                        result_validator = ResultValidator(document_analyzer.results,
+                                                           plate_number=info['plate_number'])
+                        result_validator.validate()
 
-                    full_result_analysis = pd.concat([full_result_analysis,
-                                                  pd.DataFrame({
-                                                      'document_name': [name],
-                                                      'true_status': [info['validated']],
-                                                      'predicted_status': [result_validator.validated],
-                                                      'true_cause': [info['cause']],
-                                                      'predicted_cause': [", ".join(result_validator.refused_causes)],
-                                                      'details': [document_analyzer.results],
-                                                      'error': [None]
-                                                  }, index=[0])
-                                                  ])
-                    i += 1
-                except Exception as e:
-                    pd.concat([full_result_analysis,
-                           pd.DataFrame({
-                               'document_name': [name],
-                               'true_status': [info['validated']],
-                               'predicted_status': [None],
-                               'true_cause': [info['cause']],
-                               'predicted_cause': [None],
-                               'details': [None],
-                               'error': [e]
-                           }, index=[0])
-                           ])
-                    logger.error(f"Error {e} while analyzing {name}")
+                        full_result_analysis = pd.concat([full_result_analysis,
+                                                      pd.DataFrame({
+                                                          'document_name': [name],
+                                                          'true_status': [info['validated']],
+                                                          'predicted_status': [result_validator.validated],
+                                                          'true_cause': [info['cause']],
+                                                          'predicted_cause': [", ".join(result_validator.refused_causes)],
+                                                          'details': [document_analyzer.results],
+                                                          'error': [None]
+                                                      }, index=[0])
+                                                      ])
+                        i += 1
+                        # Break the loop if everything goes well
+                        break
+
+                    except Exception as e:
+                        attempt += 1
+                        logger.error(f"Attempt {attempt}: Error {e} while analyzing {name}")
+                        if attempt == max_attempts:
+                            pd.concat([full_result_analysis,
+                                   pd.DataFrame({
+                                       'document_name': [name],
+                                       'true_status': [info['validated']],
+                                       'predicted_status': [None],
+                                       'true_cause': [info['cause']],
+                                       'predicted_cause': [None],
+                                       'details': [None],
+                                       'error': [e]
+                                   }, index=[0])
+                                   ])
+                            logger.error(f"Max attempts reached while analyzing {name}")
             saving_path = f'results/full_result_analysis_{status}.csv'
             full_result_analysis.to_csv(saving_path, index=False)
 
