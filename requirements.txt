@@ -1,0 +1,9 @@
+loguru
+python-dotenv
+segment-anything
+supervision
+python-doctr
+tf2onnx
+python-Levenshtein
+pdf2image
+pytesseract
