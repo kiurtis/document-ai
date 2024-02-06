@@ -15,8 +15,8 @@ from ai_documents.detection.template_matching import get_image_dimensions, crop_
     find_top_and_bot_of_arval_classic_restitution, resize_arval_classic, get_block2_rectangle, get_block4_rectangle, \
     draw_rectangles_and_save
 from ai_documents.detection.sam import sam_pre_template_matching_function
-from ai_documents.analysis.cv.boxes_processing import get_processed_boxes_and_words,\
-    postprocess_boxes_and_words_arval_classic_restitution
+#from ai_documents.analysis.cv.boxes_processing import get_processed_boxes_and_words,\
+#    postprocess_boxes_and_words_arval_classic_restitution
 from ai_documents.analysis.cv.document_parsing import find_next_right_word
 from ai_documents.analysis.lmm.gpt import build_block_checking_payload, request_completion, \
     build_overall_quality_checking_payload, build_signature_checking_payload, number_plate_check_gpt, \
