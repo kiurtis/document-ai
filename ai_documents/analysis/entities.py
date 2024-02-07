@@ -513,7 +513,7 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
         response = run_inf_llava(args, str(block4_text_image_path), inp_prompt_block4)
         logger.info(f'Block 4 response llava: {response}')
-        self.result_json_block_4 = None #eval(response)
+        self.result_json_block_4 = eval(response)
         if self.result_json_block_4 is None:
             self.result_json_block_4 = {'block_4': {'Nom et prénom': '<NOT_FOUND>',
                                                     'E-mail': '<NOT_FOUND>',
@@ -547,14 +547,14 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
         response = run_inf_llava(args, str(block2_text_image_path), inp_prompt_block2)
         logger.info(f'Block 2 response llava: {response}')
-        self.result_json_block_2 = None #evalt(response)
+        self.result_json_block_2 = eval(response)
         if self.result_json_block_2 is None:
             self.result_json_block_2 = {'block_2': {"Immatriculé": '<NOT_FOUND>',
                                                     "Kilométrage": '<NOT_FOUND>',
                                                     "Restitué le": '<NOT_FOUND>',
                                                     "Numéro de série": '<NOT_FOUND>'}}
 
-        self.results['block_2'] = self.result_json_block_2
+
 
         #Litle gpt hack for number_plate
         plate_number = self.document_name.split('_')[0]

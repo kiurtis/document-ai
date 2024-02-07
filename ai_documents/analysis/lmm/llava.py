@@ -16,9 +16,9 @@ from transformers import TextStreamer
 
 
 class Args:
-    model_path = "liuhaotian/llava-v1.5-7b"
+    #model_path = "liuhaotian/llava-v1.5-7b"
     # model_path = 'liuhaotian/llava-v1.6-mistral-7b'
-    #model_path = 'liuhaotian/llava-v1.6-34b'
+    model_path = 'liuhaotian/llava-v1.6-34b'
     model_base = None
     # image_file = "/content/EL-935-PX_EL-935-PX_Pv_de_restitution_p1_block_0.jpeg"  # Required argument, so no default. You must specify this!
     device = "cuda"
@@ -31,7 +31,6 @@ class Args:
 
 
 args = Args()
-
 
 
 #model
