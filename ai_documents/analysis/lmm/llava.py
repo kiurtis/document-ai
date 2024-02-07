@@ -132,4 +132,6 @@ def run_inf_llava(args ,img_path ,inp_prompt):
     print("\n", {"outputs": outputs}, "\n")
     try:
         outputs = outputs.replace('<|startoftext|> ```python' ,'').replace('```<|im_end|>' ,'')
+    except:
+        print("An exception occurred")
     return outputs

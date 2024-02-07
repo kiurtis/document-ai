@@ -531,12 +531,6 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
         run_inf_llava(args, block4_text_image_path, inp_prompt_block4)
 
-
-        # Plot the block4
-        #payload = build_block_checking_payload(keys=self.template['block_4'],
-        #                                       image_path=block4_text_image_path)
-        #payload = build_block4_checking_payload(image_path=block4_text_image_path)
-
         response = run_inf_llava(args, block4_text_image_path, inp_prompt_block4)
         logger.info(f'Block 4 response llava: {response}')
         self.result_json_block_4 = None
@@ -558,12 +552,24 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
             plt.figure(figsize=(15, 15))
             plt.imshow(image)
 
-        payload = build_block_checking_payload(keys=self.template['block_2'],
-                                               image_path=block2_text_image_path)
+        inp_prompt_block2 = """In the image, extract and provide the handwritten text that appears immediately after the words :
+
+                -'Immatriculé',
+                -'Kilométrage'
+                -'Restitué le'
+                -'N° de série'
+
+                Present the results as a Python dictionary, with keys corresponding
+                to the field names and their respective values or placeholders.
+                If you dont find a key on the image, set the value to "<NOT_FOUND>".
+                If a field is present but no value is provided, use "<EMPTY>". Don't write anything else."""
 
 
-        response = request_completion(payload)
-        self.result_json_block_2 = self.safe_process_response(response, 'result_json_block_2')
+
+        run_inf_llava(args, block2_text_image_path, inp_prompt_block2)
+
+        response = run_inf_llava(args, block2_text_image_path, inp_prompt_block2)
+        logger.info(f'Block 2 response llava: {response}')
         if self.result_json_block_2 is None:
             self.result_json_block_2 = {'block_2': {"Immatriculé": '<NOT_FOUND>',
                                                     "Kilométrage": '<NOT_FOUND>',
@@ -572,23 +578,28 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
 
         #Litle gpt hack for number_plate
-        plate_number = self.document_name.split('_')[0]
-        response2 = request_completion(number_plate_check_gpt(plate_number, block2_text_image_path))
+        #plate_number = self.document_name.split('_')[0]
+        #response2 = request_completion(number_plate_check_gpt(plate_number, block2_text_image_path))
 
-        plate_number_GPT = response2["choices"][0]['message']['content']
+        #plate_number_GPT = response2["choices"][0]['message']['content']
 
-        logger.info(f'Old plate number : {self.result_json_block_2["Immatriculé"]}')
-        self.result_json_block_2["Immatriculé"] = plate_number_GPT
-        logger.info(f'GPT plate number : {plate_number_GPT}')
-        logger.info(f'{self.result_json_block_2["Immatriculé"]}')
+        #logger.info(f'Old plate number : {self.result_json_block_2["Immatriculé"]}')
+        #self.result_json_block_2["Immatriculé"] = plate_number_GPT
+        #logger.info(f'GPT plate number : {plate_number_GPT}')
+        #logger.info(f'{self.result_json_block_2["Immatriculé"]}')
 
         self.results['block_2'] = self.result_json_block_2
 
     def assess_overall_quality(self):
-        payload = build_overall_quality_checking_payload(image_path=self.path_to_document)
-        response = request_completion(payload)
+        image_quality = self.path_to_document
+
+        inp_prompt_quality= '''I send you a picture of document. You have to tell me if the document is readable. 
+            Answer "No" (and nothing else) if the document is creased, poorly lit, very crumpled, poorly framed or distorted, 
+            or any other condition that makes it hard to read. Otherwise answer "Yes" (and nothing else).'''
+
+        response = run_inf_llava(args, image_quality, inp_prompt_quality)
+
         logger.info(f'Overall quality response: {response}')
-        self.overall_quality = self.safe_process_response(response, 'overall_quality')
         self.results['overall_quality'] = self.overall_quality
 
     def analyze_block2_signature_and_stamp(self, block_2_sign_path):
