@@ -513,7 +513,7 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
         response = run_inf_llava(args, str(block4_text_image_path), inp_prompt_block4)
         logger.info(f'Block 4 response llava: {response}')
-        self.result_json_block_4 = eval(response)
+        self.result_json_block_4 = None #eval(response)
         if self.result_json_block_4 is None:
             self.result_json_block_4 = {'block_4': {'Nom et prénom': '<NOT_FOUND>',
                                                     'E-mail': '<NOT_FOUND>',
@@ -547,7 +547,7 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
         response = run_inf_llava(args, str(block2_text_image_path), inp_prompt_block2)
         logger.info(f'Block 2 response llava: {response}')
-        self.result_json_block_2 = None
+        self.result_json_block_2 = None #evalt(response)
         if self.result_json_block_2 is None:
             self.result_json_block_2 = {'block_2': {"Immatriculé": '<NOT_FOUND>',
                                                     "Kilométrage": '<NOT_FOUND>',
@@ -557,17 +557,16 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         self.results['block_2'] = self.result_json_block_2
 
         #Litle gpt hack for number_plate
-        #plate_number = self.document_name.split('_')[0]
-        #response2 = request_completion(number_plate_check_gpt(plate_number, block2_text_image_path))
+        plate_number = self.document_name.split('_')[0]
+        plate_number_llava = number_plate_check_llava(plate_number, block2_text_image_path)
 
-        #plate_number_GPT = response2["choices"][0]['message']['content']
 
-        #logger.info(f'Old plate number : {self.result_json_block_2["Immatriculé"]}')
-        #self.result_json_block_2["Immatriculé"] = plate_number_GPT
-        #logger.info(f'GPT plate number : {plate_number_GPT}')
-        #logger.info(f'{self.result_json_block_2["Immatriculé"]}')
+        logger.info(f'Old plate number : {self.result_json_block_2["Immatriculé"]}')
+        self.result_json_block_2["Immatriculé"] = plate_number_llava
+        logger.info(f'GPT plate number : {plate_number_llava}')
+        logger.info(f'{self.result_json_block_2["Immatriculé"]}')
 
-        #self.results['block_2'] = self.result_json_block_2
+        self.results['block_2'] = self.result_json_block_2
 
     def assess_overall_quality(self):
         image_quality = self.path_to_document
@@ -616,3 +615,13 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
         self.signature_and_stamp_block_4 = response
         self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_block_4
+
+def number_plate_check_llava(plate_number, image_path, with_few_shots=False):
+    logger.info(f'LLM Trick for the plate number...')
+    logger.info(f'{image_path}')
+
+    inp_prompt = f'Analyze the image. Your objective is to check if the value of "Immatriculé" is "{plate_number}". The value is often different so watch out. \n - If you see this, write "{plate_number}" and only this.\n - If you read something different, write what you read, and only this.\n - Finally if there nothing after the word "Immatriculé" write "<EMPTY>" and only this.'
+
+    response = run_inf_llava(args, str(image_path), inp_prompt)
+
+    return response
