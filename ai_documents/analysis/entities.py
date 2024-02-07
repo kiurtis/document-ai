@@ -594,7 +594,7 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
         response = run_inf_llava(args, str(block_2_sign_path), inp_prompt)
 
-        self.signature_and_stamp_block_2 = response
+        self.signature_and_stamp_block_2 = response.replace('<|startoftext|> ', '').replace('< | im_end | >', '')
         self.results['signature_and_stamp_block_2'] = self.signature_and_stamp_block_2
 
 
@@ -613,7 +613,7 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
         response = run_inf_llava(args, str(block_4_sign_path), inp_prompt)
 
-        self.signature_and_stamp_block_4 = response
+        self.signature_and_stamp_block_4 = response.replace('<|startoftext|> ', '').replace('< | im_end | >', '')
         self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_block_4
 
 def number_plate_check_llava(plate_number, image_path, with_few_shots=False):
@@ -623,5 +623,9 @@ def number_plate_check_llava(plate_number, image_path, with_few_shots=False):
     inp_prompt = f'Analyze the image. Your objective is to check if the value of "Immatriculé" is "{plate_number}". The value is often different so watch out. \n - If you see this, write "{plate_number}" and only this.\n - If you read something different, write what you read, and only this.\n - Finally if there nothing after the word "Immatriculé" write "<EMPTY>" and only this.'
 
     response = run_inf_llava(args, str(image_path), inp_prompt)
+    try:
+        response = response.replace('<|startoftext|> ', '').replace('< | im_end | >', '')
+    except:
+        print("An exception occurred")
 
     return response

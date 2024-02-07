@@ -25,8 +25,8 @@ class Args:
     conv_mode = None
     temperature = 0.001
     max_new_tokens = 600
-    load_8bit = False
-    load_4bit = True
+    load_8bit = True
+    load_4bit = False
     debug = False
 
 
@@ -94,14 +94,14 @@ def run_inf_llava(args ,img_path ,inp_prompt):
         else:
             inp = DEFAULT_IMAGE_TOKEN + '\n' + inp
         conv.append_message(conv.roles[0], inp)
-        print(conv.roles[0])
+        #print(conv.roles[0])
         image = None
     else:
         # later messages
         conv.append_message(conv.roles[0], inp)
     conv.append_message(conv.roles[1], None)
     conv.system = ''
-    print('conv' ,conv)
+    #print('conv' ,conv)
     prompt = conv.get_prompt()
 
     input_ids = tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to \
@@ -127,8 +127,8 @@ def run_inf_llava(args ,img_path ,inp_prompt):
     # print(input_ids.shape)
 
 
-    print("\n", {"prompt": prompt} ,"\n")
-    print("\n", {"outputs": outputs}, "\n")
+    #print("\n", {"prompt": prompt} ,"\n")
+    #print("\n", {"outputs": outputs}, "\n")
     try:
         outputs = outputs.replace('<|startoftext|> ```python' ,'').replace('```<|im_end|>' ,'')
     except:
