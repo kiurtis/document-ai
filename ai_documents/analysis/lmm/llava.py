@@ -1,3 +1,27 @@
+import argparse
+import torch
+
+from LLaVA.llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+from LLaVA.llava.conversation import conv_templates, SeparatorStyle
+from LLaVA.llava.model.builder import load_pretrained_model
+from LLaVA.llava.utils import disable_torch_init
+from LLaVA.llava.mm_utils import process_images, tokenizer_image_token, get_model_name_from_path
+
+from PIL import Image
+
+import requests
+from PIL import Image
+from io import BytesIO
+from transformers import TextStreamer
+
+
+def load_image(image_file):
+    if image_file.startswith('http://') or image_file.startswith('https://'):
+        response = requests.get(image_file)
+        image = Image.open(BytesIO(response.content)).convert('RGB')
+    else:
+        image = Image.open(image_file).convert('RGB')
+    return image
 
 
 def run_inf_llava(args ,img_path ,inp_prompt):

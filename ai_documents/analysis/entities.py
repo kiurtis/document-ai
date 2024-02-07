@@ -21,7 +21,7 @@ from ai_documents.analysis.cv.document_parsing import find_next_right_word
 from ai_documents.analysis.lmm.gpt import build_block_checking_payload, request_completion, \
     build_overall_quality_checking_payload, build_signature_checking_payload, number_plate_check_gpt, \
     build_block4_checking_payload
-from ai_documents.analysis.llm.llava import run_inf_llava
+from ai_documents.analysis.lmm.llava import run_inf_llava
 from ai_documents.plotting import plot_boxes_with_text
 from ai_documents.exceptions import DocumentAnalysisError, LMMProcessingError, BlockDetectionError
 
