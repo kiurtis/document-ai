@@ -586,14 +586,14 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         logger.info(f'Analyzing block 2 signature and stamp...')
         logger.info(f'{block_2_sign_path}')
 
-        inp_prompt_quality= '''Are the signature and stamp present on the document? Answer only one word, 
+        inp_prompt= '''Are the signature and stamp present on the document? Answer only one word, 
                                             you have only 4 choices, "both", "stamp", "signature", "none".
                                             - If both, answer only "both". 
                                             - If only a stamp, answer only "stamp".
                                             - If only a a signature, answer only "signature".
                                             - If none are present, answer only "none".'''
 
-        response = run_inf_llava(args, str(image_quality), inp_prompt_quality)
+        response = run_inf_llava(args, str(block_2_sign_path), inp_prompt)
 
         self.signature_and_stamp_block_2 = response
         self.results['signature_and_stamp_block_2'] = self.signature_and_stamp_block_2
@@ -605,14 +605,14 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         logger.info(f'Analyzing block 4 signature and stamp...')
         logger.info(f'{block_4_sign_path}')
 
-        inp_prompt_quality= '''Are the signature and stamp present on the document? Answer only one word, 
+        inp_prompt= '''Are the signature and stamp present on the document? Answer only one word, 
                                             you have only 4 choices, "both", "stamp", "signature", "none".
                                             - If both, answer only "both". 
                                             - If only a stamp, answer only "stamp".
                                             - If only a a signature, answer only "signature".
                                             - If none are present, answer only "none".'''
 
-        response = run_inf_llava(args, str(image_quality), inp_prompt_quality)
+        response = run_inf_llava(args, str(block_4_sign_path), inp_prompt)
 
         self.signature_and_stamp_block_4 = response
         self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_block_4
