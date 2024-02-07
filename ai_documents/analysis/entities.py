@@ -340,7 +340,7 @@ class ArvalClassicDocumentAnalyzer:
     def analyze_block4(self):
         #We check if the block4 is subdvided:
         if has_non_none_attributes(self, "block_4_info_path", "block_4_sign_path"):
-            self.analyze_block4_text(self.block_4_info_path, verbose=False, plot_boxes=False)
+            self.analyze_block4_text(str(self.block_4_info_path), verbose=False, plot_boxes=False)
             self.analyze_block4_signature_and_stamp(self.block_4_sign_path)
             self.results['details']['block_2_image_analyzed'] = 'block_4_sign_path'
         else:
@@ -531,7 +531,7 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
               If you dont find a key on the image, set the value to "<NOT_FOUND>".
               If a field is present but no value is provided, use "<EMPTY>". Don't write anything else."""
 
-        response = run_inf_llava(args, block4_text_image_path, inp_prompt_block4)
+        response = run_inf_llava(args, str(block4_text_image_path), inp_prompt_block4)
         logger.info(f'Block 4 response llava: {response}')
         self.result_json_block_4 = eval(response)
         if self.result_json_block_4 is None:
@@ -566,7 +566,7 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
                 If you dont find a key on the image, set the value to "<NOT_FOUND>".
                 If a field is present but no value is provided, use "<EMPTY>". Don't write anything else."""
 
-        response = run_inf_llava(args, block2_text_image_path, inp_prompt_block2)
+        response = run_inf_llava(args, str(block2_text_image_path), inp_prompt_block2)
         logger.info(f'Block 2 response llava: {response}')
         if self.result_json_block_2 is None:
             self.result_json_block_2 = {'block_2': {"Immatriculé": '<NOT_FOUND>',
