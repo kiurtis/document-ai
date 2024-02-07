@@ -490,25 +490,6 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
 class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
-    @staticmethod
-    def safe_process_response(response, attribute):
-        if 'error' not in response.keys():
-            try:
-                content = response["choices"][0]['message']['content']
-                try:
-                    content = json.loads(content)
-                except:
-                    pass  # content is not a string dictionary, so it is already a string and no more processing to do
-                return content
-            except Exception as e:
-                raise LMMProcessingError(f'Could not process {attribute} response: {e}')
-                #logger.warning(f'Could not process {attribute} response: {e}')
-                #return None
-        else:
-            raise LMMProcessingError(f'Could not process {attribute} response: {response["error"]["code"]}')
-            #logger.warning(f'Could not process {attribute} response: {response["error"]["code"]}')
-            #return None
-
     def analyze_block4_text(self, block4_text_image_path, verbose=False, plot_boxes=False):
         logger.info(f'Analyzing block 4 text...')
         logger.info(f'{block4_text_image_path}')
@@ -568,6 +549,7 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
         response = run_inf_llava(args, str(block2_text_image_path), inp_prompt_block2)
         logger.info(f'Block 2 response llava: {response}')
+        self.result_json_block_2 = None
         if self.result_json_block_2 is None:
             self.result_json_block_2 = {'block_2': {"Immatriculé": '<NOT_FOUND>',
                                                     "Kilométrage": '<NOT_FOUND>',
@@ -595,9 +577,10 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
             Answer "No" (and nothing else) if the document is creased, poorly lit, very crumpled, poorly framed or distorted, 
             or any other condition that makes it hard to read. Otherwise answer "Yes" (and nothing else).'''
 
-        response = run_inf_llava(args, image_quality, inp_prompt_quality)
+        response = run_inf_llava(args, str(image_quality), inp_prompt_quality)
 
         logger.info(f'Overall quality response: {response}')
+        self.overall_quality = response
         self.results['overall_quality'] = self.overall_quality
 
     def analyze_block2_signature_and_stamp(self, block_2_sign_path):
