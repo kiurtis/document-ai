@@ -576,7 +576,7 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
             or any other condition that makes it hard to read. Otherwise answer "Yes" (and nothing else).'''
 
         response = run_inf_llava(args, str(image_quality), inp_prompt_quality)
-
+        response = response.replace('<|startoftext|> ', '').replace('<|im_end|>', '')
         logger.info(f'Overall quality response: {response}')
         self.overall_quality = response
         self.results['overall_quality'] = self.overall_quality
@@ -594,7 +594,7 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
         response = run_inf_llava(args, str(block_2_sign_path), inp_prompt)
 
-        self.signature_and_stamp_block_2 = response.replace('<|startoftext|> ', '').replace('< | im_end | >', '')
+        self.signature_and_stamp_block_2 = response.replace('<|startoftext|> ', '').replace('<|im_end|>', '')
         self.results['signature_and_stamp_block_2'] = self.signature_and_stamp_block_2
 
 
@@ -613,7 +613,7 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
 
         response = run_inf_llava(args, str(block_4_sign_path), inp_prompt)
 
-        self.signature_and_stamp_block_4 = response.replace('<|startoftext|> ', '').replace('< | im_end | >', '')
+        self.signature_and_stamp_block_4 = response.replace('<|startoftext|> ', '').replace('<|im_end|>', '')
         self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_block_4
 
 def number_plate_check_llava(plate_number, image_path, with_few_shots=False):
@@ -624,7 +624,7 @@ def number_plate_check_llava(plate_number, image_path, with_few_shots=False):
 
     response = run_inf_llava(args, str(image_path), inp_prompt)
     try:
-        response = response.replace('<|startoftext|> ', '').replace('< | im_end | >', '')
+        response = response.replace('<|startoftext|> ', '').replace('<|im_end|>', '')
     except:
         print("An exception occurred")
 
