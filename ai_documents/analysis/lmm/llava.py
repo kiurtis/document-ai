@@ -15,6 +15,32 @@ from io import BytesIO
 from transformers import TextStreamer
 
 
+class Args:
+    model_path = "liuhaotian/llava-v1.5-7b"
+    # model_path = 'liuhaotian/llava-v1.6-mistral-7b'
+    model_path = 'liuhaotian/llava-v1.6-34b'
+    model_base = None
+    # image_file = "/content/EL-935-PX_EL-935-PX_Pv_de_restitution_p1_block_0.jpeg"  # Required argument, so no default. You must specify this!
+    device = "cuda"
+    conv_mode = None
+    temperature = 0.001
+    max_new_tokens = 600
+    load_8bit = False
+    load_4bit = True
+    debug = False
+
+
+args = Args()
+
+
+
+#model
+disable_torch_init()
+
+model_name = get_model_name_from_path(args.model_path)
+tokenizer, model, image_processor, context_len = load_pretrained_model(args.model_path, args.model_base, model_name, args.load_8bit, args.load_4bit, device=args.device)
+
+
 def load_image(image_file):
     if image_file.startswith('http://') or image_file.startswith('https://'):
         response = requests.get(image_file)
@@ -22,6 +48,8 @@ def load_image(image_file):
     else:
         image = Image.open(image_file).convert('RGB')
     return image
+
+
 
 
 def run_inf_llava(args ,img_path ,inp_prompt):

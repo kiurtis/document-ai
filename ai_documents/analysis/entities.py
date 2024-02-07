@@ -21,7 +21,7 @@ from ai_documents.analysis.cv.document_parsing import find_next_right_word
 from ai_documents.analysis.lmm.gpt import build_block_checking_payload, request_completion, \
     build_overall_quality_checking_payload, build_signature_checking_payload, number_plate_check_gpt, \
     build_block4_checking_payload
-from ai_documents.analysis.lmm.llava import run_inf_llava
+from ai_documents.analysis.lmm.llava import run_inf_llava,args
 from ai_documents.plotting import plot_boxes_with_text
 from ai_documents.exceptions import DocumentAnalysisError, LMMProcessingError, BlockDetectionError
 
@@ -527,21 +527,7 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
               If you dont find a key on the image, set the value to "<NOT_FOUND>".
               If a field is present but no value is provided, use "<EMPTY>". Don't write anything else."""
 
-        class Args:
-            model_path = "liuhaotian/llava-v1.5-7b"
-            # model_path = 'liuhaotian/llava-v1.6-mistral-7b'
-            model_path = 'liuhaotian/llava-v1.6-34b'
-            model_base = None
-            # image_file = "/content/EL-935-PX_EL-935-PX_Pv_de_restitution_p1_block_0.jpeg"  # Required argument, so no default. You must specify this!
-            device = "cuda"
-            conv_mode = None
-            temperature = 0.001
-            max_new_tokens = 600
-            load_8bit = False
-            load_4bit = True
-            debug = False
 
-        args = Args()
 
         run_inf_llava(args, block4_text_image_path, inp_prompt_block4)
 
