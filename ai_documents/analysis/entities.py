@@ -510,6 +510,10 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
             #return None
 
     def analyze_block4_text(self, block4_text_image_path, verbose=False, plot_boxes=False):
+        logger.info(f'Analyzing block 4 text...')
+        logger.info(f'{block4_text_image_path}')
+        type_img = type(block4_text_image_path)
+        logger.info(f'{type_img}')
         if plot_boxes:
             image = PIL.Image.open(block4_text_image_path)
             plt.figure(figsize=(15, 15))
@@ -527,13 +531,9 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
               If you dont find a key on the image, set the value to "<NOT_FOUND>".
               If a field is present but no value is provided, use "<EMPTY>". Don't write anything else."""
 
-
-
-        run_inf_llava(args, block4_text_image_path, inp_prompt_block4)
-
         response = run_inf_llava(args, block4_text_image_path, inp_prompt_block4)
         logger.info(f'Block 4 response llava: {response}')
-        self.result_json_block_4 = None
+        self.result_json_block_4 = eval(response)
         if self.result_json_block_4 is None:
             self.result_json_block_4 = {'block_4': {'Nom et prénom': '<NOT_FOUND>',
                                                     'E-mail': '<NOT_FOUND>',
@@ -546,6 +546,8 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
     def analyze_block2_text(self, block2_text_image_path, verbose=False, plot_boxes=False):
         logger.info(f'Analyzing block 2 text...')
         logger.info(f'{block2_text_image_path}')
+        type_img = type(block2_text_image_path)
+        logger.info(f'{type_img}')
         # self.block_2_info_path = "/Users/amielsitruk/work/terra_cognita/customers/pop_valet/ai_documents/data/performances_data/valid_data/fleet_services_images/DM-984-VT_Proces_verbal_de_restitution_page-0001/blocks/DM-984-VT_Proces_verbal_de_restitution_page-0001_block 2.png"
         if plot_boxes:
             image = PIL.Image.open(block2_text_image_path)
@@ -564,10 +566,6 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
                 If you dont find a key on the image, set the value to "<NOT_FOUND>".
                 If a field is present but no value is provided, use "<EMPTY>". Don't write anything else."""
 
-
-
-        run_inf_llava(args, block2_text_image_path, inp_prompt_block2)
-
         response = run_inf_llava(args, block2_text_image_path, inp_prompt_block2)
         logger.info(f'Block 2 response llava: {response}')
         if self.result_json_block_2 is None:
@@ -576,7 +574,7 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
                                                     "Restitué le": '<NOT_FOUND>',
                                                     "Numéro de série": '<NOT_FOUND>'}}
 
-
+        self.results['block_2'] = self.result_json_block_2
         #Litle gpt hack for number_plate
         #plate_number = self.document_name.split('_')[0]
         #response2 = request_completion(number_plate_check_gpt(plate_number, block2_text_image_path))
@@ -588,7 +586,7 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         #logger.info(f'GPT plate number : {plate_number_GPT}')
         #logger.info(f'{self.result_json_block_2["Immatriculé"]}')
 
-        self.results['block_2'] = self.result_json_block_2
+        #self.results['block_2'] = self.result_json_block_2
 
     def assess_overall_quality(self):
         image_quality = self.path_to_document
