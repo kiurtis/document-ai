@@ -25,8 +25,8 @@ class Args:
     conv_mode = None
     temperature = 0.001
     max_new_tokens = 600
-    load_8bit = True
-    load_4bit = False
+    load_8bit = False
+    load_4bit = True 
     debug = False
 
 
