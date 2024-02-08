@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from ai_documents.exceptions import TemplateMatchingError, ImageNotFoundError
 
 load_dotenv(find_dotenv())
-PLOT_MATCHED_BLOCKS = os.environ.get('PLOT_MATCHED_BLOCKS')
+PLOT_MATCHED_BLOCKS = False #os.environ.get('PLOT_MATCHED_BLOCKS')
 
 
 def get_image_dimensions(image_path):

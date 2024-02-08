@@ -511,6 +511,32 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
               If you dont find a key on the image, set the value to "<NOT_FOUND>".
               If a field is present but no value is provided, use "<EMPTY>". Don't write anything else."""
 
+        inp_prompt_block4='''Given an image, the task is to extract handwritten text appearing immediately after specified field names.
+                            The fields of interest are 'Nom et prénom', 'E-mail', 'Tél', and 'Société'.
+                            The extracted text for each field should be stored in a Python dictionary.
+                            If a field is not found in the image, its value in the dictionary should be "<NOT_FOUND>".
+                            If a field is found but no value is provided, use "<EMPTY>" as its value.
+
+                            Initialize a dictionary to store the results.
+                            extracted_text = {
+                                "Nom et prénom": '<NOT_FOUND>',
+                                "E-mail": '<NOT_FOUND>',
+                                "Tél": '<NOT_FOUND>',
+                                "Société": '<NOT_FOUND>',
+                            }
+
+                            Implementation for text extraction goes here.
+                            This would involve processing the image to locate and extract the handwritten text for each specified field.
+                            Depending on the actual implementation, this might involve OCR (Optical Character Recognition) techniques,
+                            image preprocessing to enhance handwriting legibility, and text parsing to associate extracted text with the correct field.
+                            
+                            Example of updating the dictionary with extracted values or placeholders.
+                            extracted_text['Nom et prénom'] = 'John Doe'  # Update with actual extracted text
+                            extracted_text['E-mail'] = '<EMPTY>'  # Example when a field is found but no value is provided
+                            
+                            Return just the dictionary containing the extracted information or placeholders, nothing else.'''
+
+
         response = run_inf_llava(args, str(block4_text_image_path), inp_prompt_block4)
         logger.info(f'Block 4 response llava: {response}')
         self.result_json_block_4 = eval(response)
@@ -544,6 +570,30 @@ class ArvalClassicLLAVADocumentAnalyzer(ArvalClassicDocumentAnalyzer):
                 to the field names and their respective values or placeholders.
                 If you dont find a key on the image, set the value to "<NOT_FOUND>".
                 If a field is present but no value is provided, use "<EMPTY>". Don't write anything else."""
+
+        inp_prompt_block2 = ''' The script aims to extract handwritten text from an image, specifically the text that follows certain field names.
+                                The fields of interest are 'Immatriculé', 'Kilométrage', 'Restitué le', and 'N° de série'.
+                                The results will be stored in a Python dictionary with keys corresponding to these field names.
+                                If a key is not found in the image, its value should be set to "<NOT_FOUND>".
+                                If a field is present but lacks a value, the value should be "<EMPTY>".
+                                
+                                Initialize the dictionary with all fields set to "<NOT_FOUND>" as default values.
+                                extracted_data = {
+                                    'Immatriculé': '<NOT_FOUND>',
+                                    'Kilométrage': '<NOT_FOUND>',
+                                    'Restitué le': '<NOT_FOUND>',
+                                    'N° de série': '<NOT_FOUND>',
+                                }
+                                
+                                Implementation for extracting the handwritten text goes here.
+                                This section would typically involve processing the image to detect and read the handwritten text near the specified fields.
+                                Techniques such as OCR (Optical Character Recognition) and image preprocessing might be utilized to improve accuracy of text detection and extraction.
+                                
+                                Example code to update the dictionary based on extracted or missing information.
+                                extracted_data['Immatriculé'] = 'ABC-123-XYZ'  # An example of updating the dictionary with an extracted value.
+                                extracted_data['Kilométrage'] = '<EMPTY>'  # Example when a field is found but it has no written value next to it.
+
+                            Return just the dictionary containing the extracted information or placeholders, nothing else.'''
 
         response = run_inf_llava(args, str(block2_text_image_path), inp_prompt_block2)
         logger.info(f'Block 2 response llava: {response}')
