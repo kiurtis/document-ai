@@ -26,7 +26,7 @@ class Args:
     temperature = 0.001
     max_new_tokens = 600
     load_8bit = False
-    load_4bit = False
+    load_4bit = True
     debug = False
 
 
