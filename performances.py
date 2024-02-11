@@ -126,11 +126,11 @@ def load_ground_truth_data(status):
     return ground_truth_data
 
 
-def build_metrics_dfs(predictions_path, ground_truth_data, filename_suffix):
+def build_metrics_dfs(predictions_path, ground_truth_data, folder_suffix):
     predictions_data = pd.read_csv(predictions_path)
     merged_data = pd.merge(ground_truth_data, predictions_data, on='document_name', how='inner')
-    os.makedirs(f'results/error_analysis_{status}_{dt}', exist_ok=True)
-    merged_data.to_csv(f'results/error_analysis_{status}_{dt}/merged_data.csv', index=False)
+    os.makedirs(f'results/error_analysis_{folder_suffix}', exist_ok=True)
+    merged_data.to_csv(f'results/error_analysis_{folder_suffix}/merged_data.csv', index=False)
 
     df = merged_data.copy()
     df['ground_truth'] = df['ground_truth'].apply(
@@ -185,8 +185,8 @@ def build_metrics_dfs(predictions_path, ground_truth_data, filename_suffix):
                                 }, index=[0]
                                 )])
 
-        error_df.to_csv(f'results/error_analysis_{filename_suffix}/error_{cause}.csv', index=False)
-    summary_df.to_csv(f'results/error_analysis_{filename_suffix}/summary.csv', index=False)
+        error_df.to_csv(f'results/error_analysis_{folder_suffix}/error_{cause}.csv', index=False)
+    summary_df.to_csv(f'results/error_analysis_{folder_suffix}/summary.csv', index=False)
 if __name__ == '__main__':
 
     RUN_ANALYSIS = True
