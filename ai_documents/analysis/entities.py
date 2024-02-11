@@ -21,6 +21,9 @@ from ai_documents.analysis.cv.document_parsing import find_next_right_word
 from ai_documents.analysis.lmm.gpt import build_block_checking_payload, request_completion, \
     build_overall_quality_checking_payload, build_signature_checking_payload, number_plate_check_gpt, \
     build_block4_checking_payload
+
+from ai_documents.analysis.lmm.gemini import check_overall_quality as check_overall_quality_gemini, analyse_block2 as analyse_block2_gemini, \
+    analyse_block4 as analyse_block4_gemini, check_signature_and_stamp as check_signature_and_stamp_gemini
 from ai_documents.plotting import plot_boxes_with_text
 from ai_documents.exceptions import DocumentAnalysisError, LMMProcessingError, BlockDetectionError
 
@@ -484,5 +487,103 @@ class ArvalClassicGPTDocumentAnalyzer(ArvalClassicDocumentAnalyzer):
         logger.info(f'{block_4_sign_path}')
         payload = build_signature_checking_payload(image_path=block_4_sign_path)
         response = request_completion(payload)
+        self.signature_and_stamp_block_4 = self.safe_process_response(response, 'signature_and_stamp_4')
+        self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_block_4
+
+
+
+class ArvalClassicGeminiDocumentAnalyzer(ArvalClassicGPTDocumentAnalyzer):
+
+    @staticmethod
+    def safe_process_response(response, attribute):
+        '''if 'error' not in response.keys():
+            try:
+                content = response["choices"][0]['message']['content']
+                try:
+                    content = json.loads(content)
+                except:
+                    pass  # content is not a string dictionary, so it is already a string and no more processing to do
+                return content
+            except Exception as e:
+                raise LMMProcessingError(f'Could not process {attribute} response: {e}')
+                #logger.warning(f'Could not process {attribute} response: {e}')
+                #return None
+        else:
+            raise LMMProcessingError(f'Could not process {attribute} response: {response["error"]["code"]}')
+            #logger.warning(f'Could not process {attribute} response: {response["error"]["code"]}')
+            #return None'''
+        try:
+            return json.loads(response.text.replace('python', '').replace("`", ''))
+        except Exception as e:
+            return response.text.lstrip()
+
+    def analyze_block4_text(self, block4_text_image_path, verbose=False, plot_boxes=False):
+        if plot_boxes:
+            image = PIL.Image.open(block4_text_image_path)
+            plt.figure(figsize=(15, 15))
+            plt.imshow(image)
+
+        response = analyse_block4_gemini(block4_text_image_path)
+        logger.info(f'Block 4 response: {response}')
+        self.result_json_block_4 = self.safe_process_response(response, 'result_json_block_4')
+        if self.result_json_block_4 is None:
+            self.result_json_block_4 = {'block_4': {'Nom et prénom': '<NOT_FOUND>',
+                                                    'E-mail': '<NOT_FOUND>',
+                                                    'Tél': '<NOT_FOUND>',
+                                                    'le': '<NOT_FOUND>',
+                                                    'Société': '<NOT_FOUND>'}}
+
+        self.results['block_4'] = self.result_json_block_4
+
+    def analyze_block2_text(self, block2_text_image_path, verbose=False, plot_boxes=False):
+        logger.info(f'Analyzing block 2 text...')
+        logger.info(f'{block2_text_image_path}')
+        # self.block_2_info_path = "/Users/amielsitruk/work/terra_cognita/customers/pop_valet/ai_documents/data/performances_data/valid_data/fleet_services_images/DM-984-VT_Proces_verbal_de_restitution_page-0001/blocks/DM-984-VT_Proces_verbal_de_restitution_page-0001_block 2.png"
+        if plot_boxes:
+            image = PIL.Image.open(block2_text_image_path)
+            plt.figure(figsize=(15, 15))
+            plt.imshow(image)
+
+        response = analyse_block2_gemini(block2_text_image_path)
+
+        self.result_json_block_2 = self.safe_process_response(response, 'result_json_block_2')
+        if self.result_json_block_2 is None:
+            self.result_json_block_2 = {'block_2': {"Immatriculé": '<NOT_FOUND>',
+                                                    "Kilométrage": '<NOT_FOUND>',
+                                                    "Restitué le": '<NOT_FOUND>',
+                                                    "Numéro de série": '<NOT_FOUND>'}}
+
+
+        """#Litle gpt hack for number_plate
+        plate_number = self.document_name.split('_')[0]
+        response2 = request_completion(number_plate_check_gpt(plate_number, block2_text_image_path))
+
+        plate_number_GPT = response2["choices"][0]['message']['content']
+
+        logger.info(f'Old plate number : {self.result_json_block_2["Immatriculé"]}')
+        self.result_json_block_2["Immatriculé"] = plate_number_GPT
+        logger.info(f'GPT plate number : {plate_number_GPT}')
+        logger.info(f'{self.result_json_block_2["Immatriculé"]}')"""
+
+        self.results['block_2'] = self.result_json_block_2
+
+    def assess_overall_quality(self):
+        response = check_overall_quality_gemini(self.path_to_document)
+        logger.info(f'Overall quality response: {response}')
+        self.overall_quality = self.safe_process_response(response, 'overall_quality')
+        self.results['overall_quality'] = self.overall_quality
+
+    def analyze_block2_signature_and_stamp(self, block_2_sign_path):
+        logger.info(f'Analyzing block 2 signature and stamp...')
+        logger.info(f'{block_2_sign_path}')
+        response = check_signature_and_stamp_gemini(block_2_sign_path)
+
+        self.signature_and_stamp_block_2 = self.safe_process_response(response, 'signature_and_stamp_2')
+        self.results['signature_and_stamp_block_2'] = self.signature_and_stamp_block_2
+
+    def analyze_block4_signature_and_stamp(self,block_4_sign_path):
+        logger.info(f'Analyzing block 4 signature and stamp...')
+        logger.info(f'{block_4_sign_path}')
+        response = check_signature_and_stamp_gemini(block_4_sign_path)
         self.signature_and_stamp_block_4 = self.safe_process_response(response, 'signature_and_stamp_4')
         self.results['signature_and_stamp_block_4'] = self.signature_and_stamp_block_4
