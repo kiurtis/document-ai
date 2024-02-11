@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
-from ai_documents.analysis.entities import ArvalClassicDocumentAnalyzer, ArvalClassicGPTDocumentAnalyzer
+from ai_documents.analysis.entities import ArvalClassicDocumentAnalyzer, ArvalClassicGPTDocumentAnalyzer, ArvalClassicGeminiDocumentAnalyzer
 from ai_documents.validation.entities import ResultValidator
 from ai_documents.utils import normalize_str
 from loguru import logger
@@ -125,14 +125,76 @@ def load_ground_truth_data(status):
     ground_truth_data = pd.read_csv(ground_truth_path)
     return ground_truth_data
 
+
+def build_metrics_dfs(predictions_path, ground_truth_data, filename_suffix):
+    predictions_data = pd.read_csv(predictions_path)
+    merged_data = pd.merge(ground_truth_data, predictions_data, on='document_name', how='inner')
+    os.makedirs(f'results/error_analysis_{status}_{dt}', exist_ok=True)
+    merged_data.to_csv(f'results/error_analysis_{status}_{dt}/merged_data.csv', index=False)
+
+    df = merged_data.copy()
+    df['ground_truth'] = df['ground_truth'].apply(
+        lambda x: x.replace('\n', '').replace(' ', '').split(','))  # Split string into list
+    df.loc[df['predicted_cause'].isnull(), 'predicted_cause'] = '-'  # Replace NaN with '-'
+    df['predicted_cause'] = df['predicted_cause'].apply(
+        lambda x: x.replace('\n', '').replace(' ', '').split(','))  # Split string into list
+
+    # List of all unique failure causes
+    all_causes = set(
+        cause for sublist in df.ground_truth.tolist() + df.predicted_cause.tolist() for cause in sublist)
+    all_causes = ['quality_is_not_ok', 'signatures_are_not_ok', 'stamps_are_not_ok', 'mileage_is_not_ok',
+                  'number_plate_is_not_filled', 'number_plate_is_not_right', 'block4_is_not_filled',
+                  'block4_is_not_filled_by_company', 'driver_name_is_not_filled', 'serial_number_is_not_filled',
+                  'telephone_is_not_filled', 'email_is_not_filled', 'block2_is_not_filled',
+                  'restitution_date_is_not_filled']
+    expanded_df = expand_df(df, all_causes)
+
+    # Tag documents with good quality
+    good_quality_documents = expanded_df.loc[
+        (expanded_df['cause'] == 'quality_is_not_ok') &
+        (~expanded_df['ground_truth'])].document_name.tolist()
+    logger.info(f"Found {len(good_quality_documents)} good quality documents")
+
+    expanded_df['good_quality_document'] = expanded_df['document_name'].isin(good_quality_documents)
+    # all_causes = ['block4_is_not_filled', 'block4_is_not_filled_by_company',
+    #              'driver_name_is_not_filled', 'email_is_not_filled', 'telephone_is_not_filled', 'quality_is_not_ok',
+    #              ]
+    summary_df = pd.DataFrame()
+
+    for cause in sorted(all_causes):
+        accuracy, recall, precision, (TP, FP, TN, FN) = calculate_metrics(expanded_df, cause)
+        error_df = get_false_positives_negatives(expanded_df, cause)
+        print(f"Error: {cause}")
+        print(f" Accuracy: {accuracy:0.02f}")
+        print(f" Recall: {recall:0.02f}")
+        print(f" Precision: {precision:0.02f}")
+        print(f" True Positives: {TP}")
+        print(f" False Positives: {FP}")
+        print(f" True Negatives: {TN}")
+        print(f" False Negatives: {FN}\n")
+        summary_df = pd.concat([summary_df,
+                                pd.DataFrame({
+                                    'cause': [cause],
+                                    'accuracy': [accuracy],
+                                    'recall': [recall],
+                                    'precision': [precision],
+                                    'TP': [TP],
+                                    'FP': [FP],
+                                    'TN': [TN],
+                                    'FN': [FN]
+                                }, index=[0]
+                                )])
+
+        error_df.to_csv(f'results/error_analysis_{filename_suffix}/error_{cause}.csv', index=False)
+    summary_df.to_csv(f'results/error_analysis_{filename_suffix}/summary.csv', index=False)
 if __name__ == '__main__':
 
     RUN_ANALYSIS = True
     RUN_METRICS_COMPUTATION = True
-    WITH_GPT = True
+    MODEL = 'GEMINI'  # 'GPT' or 'GEMINI'
     PARTIAL_ANALYSIS = False # If true, you need to comment out irrelevant validation part in the ResultValidator class
-    STATUS_TO_RUN = ['valid',
-                     #'invalid'
+    STATUS_TO_RUN = [#'valid',
+                     'invalid'
                      ]
     dt = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -177,9 +239,15 @@ if __name__ == '__main__':
             for name, info in tqdm(files_to_iterate):
                 logger.info(f"Analyzing {name}")
                 try:
-                    document_analyzer = ArvalClassicGPTDocumentAnalyzer(name, info['path'],
-                                                                        #hyperparameters
-                                                                        )
+                    if MODEL == 'GPT':
+                        document_analyzer = ArvalClassicGPTDocumentAnalyzer(name, info['path'],
+                                                                            #hyperparameters
+                                                                            )
+                    elif MODEL == 'GEMINI':
+                        document_analyzer = ArvalClassicGeminiDocumentAnalyzer(name, info['path'],
+                                                                            #hyperparameters
+                                                                            )
+
                     #document_analyzer.analyze()
                     if PARTIAL_ANALYSIS:
                         document_analyzer.assess_overall_quality()
@@ -228,70 +296,12 @@ if __name__ == '__main__':
             full_result_analysis.to_csv(saving_path, index=False)
 
     if RUN_METRICS_COMPUTATION:
-
         for status in STATUS_TO_RUN:
-            #predictions_path = 'results/predictions_amiel.csv'    # Replace with your actual path
             if RUN_ANALYSIS:
                 predictions_path = saving_path
             else:
                 predictions_path = 'results/full_result_analysis_20231222_133655.csv'
+            ground_truth_data = load_ground_truth_data(status)
+            filename_suffix = f'{status}_{MODEL}_{dt}'
+            build_metrics_dfs(predictions_path, ground_truth_data, filename_suffix)
 
-            predictions_data = pd.read_csv(predictions_path)
-            merged_data = pd.merge(ground_truth_data, predictions_data, on='document_name', how='inner')
-            os.makedirs(f'results/error_analysis_{status}_{dt}', exist_ok=True)
-            merged_data.to_csv(f'results/error_analysis_{status}_{dt}/merged_data.csv', index=False)
-
-            df = merged_data.copy()
-            df['ground_truth'] = df['ground_truth'].apply(lambda x: x.replace('\n', '').replace(' ', '').split(','))  # Split string into list
-            df.loc[df['predicted_cause'].isnull(), 'predicted_cause'] = '-'  # Replace NaN with '-'
-            df['predicted_cause'] = df['predicted_cause'].apply(lambda x: x.replace('\n', '').replace(' ', '').split(','))  # Split string into list
-
-            # List of all unique failure causes
-            all_causes = set(
-                cause for sublist in df.ground_truth.tolist() + df.predicted_cause.tolist() for cause in sublist)
-            all_causes = ['quality_is_not_ok', 'signatures_are_not_ok', 'stamps_are_not_ok', 'mileage_is_not_ok',
-                          'number_plate_is_not_filled', 'number_plate_is_not_right', 'block4_is_not_filled',
-                          'block4_is_not_filled_by_company', 'driver_name_is_not_filled', 'serial_number_is_not_filled',
-                          'telephone_is_not_filled', 'email_is_not_filled', 'block2_is_not_filled',
-                          'restitution_date_is_not_filled']
-            expanded_df = expand_df(df, all_causes)
-
-            # Tag documents with good quality
-            good_quality_documents = expanded_df.loc[
-                (expanded_df['cause'] == 'quality_is_not_ok') &
-                (~expanded_df['ground_truth'])].document_name.tolist()
-            logger.info(f"Found {len(good_quality_documents)} good quality documents")
-
-            expanded_df['good_quality_document'] = expanded_df['document_name'].isin(good_quality_documents)
-            #all_causes = ['block4_is_not_filled', 'block4_is_not_filled_by_company',
-            #              'driver_name_is_not_filled', 'email_is_not_filled', 'telephone_is_not_filled', 'quality_is_not_ok',
-            #              ]
-
-            summary_df = pd.DataFrame()
-            for cause in sorted(all_causes):
-                accuracy, recall, precision, (TP, FP, TN, FN) = calculate_metrics(expanded_df, cause)
-                error_df = get_false_positives_negatives(expanded_df, cause)
-                print(f"Error: {cause}")
-                print(f" Accuracy: {accuracy:0.02f}")
-                print(f" Recall: {recall:0.02f}")
-                print(f" Precision: {precision:0.02f}")
-                print(f" True Positives: {TP}")
-                print(f" False Positives: {FP}")
-                print(f" True Negatives: {TN}")
-                print(f" False Negatives: {FN}\n")
-                summary_df = pd.concat([summary_df,
-                                        pd.DataFrame({
-                                            'cause': [cause],
-                                            'accuracy': [accuracy],
-                                            'recall': [recall],
-                                            'precision': [precision],
-                                            'TP': [TP],
-                                            'FP': [FP],
-                                            'TN': [TN],
-                                            'FN': [FN]
-                                        }, index=[0]
-                                        )])
-
-
-                error_df.to_csv(f'results/error_analysis_{status}_{dt}/error_{cause}.csv', index=False)
-            summary_df.to_csv(f'results/error_analysis_{status}_{dt}/summary.csv', index=False)
