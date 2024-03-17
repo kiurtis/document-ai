@@ -6,6 +6,8 @@ from dotenv import load_dotenv, find_dotenv
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('agg')
 
 from ai_documents.exceptions import TemplateMatchingError, ImageNotFoundError
 

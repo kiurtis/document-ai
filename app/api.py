@@ -18,13 +18,14 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@auth.login_required
 @app.route('/', methods=['GET'])
+@auth.login_required
 def get_status():
     # n_thread = threading.active_count()
     # return {"message":f"The API is up and running. Number of threads: {n_thread}!"}
     return {"message": f"The API is up and running."}
 @app.route('/validate_document', methods=['POST'])
+@auth.login_required
 def validate_document():
     print(request.files)
     if 'file' not in request.files:
